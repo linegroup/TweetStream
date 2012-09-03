@@ -3,6 +3,5 @@
 *.gz
 .DS_Store
 *convert*
-*.classpath
 *.prefs
 *.class
