@@ -4,6 +4,5 @@
 .DS_Store
 *convert*
 *.classpath
-*.project
 *.prefs
 *.class
