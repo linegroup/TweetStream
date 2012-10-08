@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 
 
@@ -47,15 +48,122 @@ public class LoadTweetsInFile {
 		}
 	}
 	
+	static public void checkDulplication(){
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		TreeSet<String> set = new TreeSet<String>();
+		try {
+			
+			stmt = conn2.createStatement();
+
+			if (stmt.execute("select  status_ID from stream")) {
+				rs = stmt.getResultSet();
+				while (rs.next()) {
+					
+					String status_ID = rs.getString("status_ID");
+					set.add(status_ID);
+				}
+			}
+			
+
+
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+		} finally {
+			// it is a good idea to release
+			// resources in a finally{} block
+			// in reverse-order of their creation
+			// if they are no-longer needed
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException sqlEx) {
+				} // ignore
+				rs = null;
+			}
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (SQLException sqlEx) {
+				} // ignore
+				stmt = null;
+			}
+		}
+		
+		System.out.println(set.size());
+	}
+	
+	static public void statisticMonth(){
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		for(int month = 1; month <=12; month ++)
+		try {
+			
+			String monthStr = "" + month;
+			if(month < 10)	monthStr = "0" + monthStr;
+			
+			stmt = conn.createStatement();
+			String sqlTxt = "select count(*) as cnt from tweet_2011_" + monthStr;
+			//System.out.println(sqlTxt);
+			if (stmt.execute(sqlTxt)) {
+				rs = stmt.getResultSet();
+				while (rs.next()) {
+					
+					System.out.println(rs.getInt("cnt"));
+					
+				}
+			}
+			
+			//out.close();
+
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+		} finally {
+			// it is a good idea to release
+			// resources in a finally{} block
+			// in reverse-order of their creation
+			// if they are no-longer needed
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException sqlEx) {
+				} // ignore
+				rs = null;
+			}
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (SQLException sqlEx) {
+				} // ignore
+				stmt = null;
+			}
+		}
+	}
+	
 	static public void loadTweets(){
 		Statement stmt = null;
 		ResultSet rs = null;
 		
+		for(int month = 1; month <=4; month ++)
 		try {
 			
+			String monthStr = "" + month;
+			if(month < 10)	monthStr = "0" + monthStr;
+			
 			stmt = conn.createStatement();
-
-			if (stmt.execute("select published_time_GMT, status_ID, user_ID, content from tweet_2011_10")) {
+			String sqlTxt = "select published_time_GMT, status_ID, user_ID, content from tweet_2012_" + monthStr;
+			System.out.println(sqlTxt);
+			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
 				while (rs.next()) {
 					
@@ -235,24 +343,33 @@ public class LoadTweetsInFile {
 		ResultSet rs = null;
 		
 		
-		for(int hour = 15; hour <24 ; hour ++)
+		for(int hour = 0; hour <24 ; hour ++)
 		for(int min = 0; min < 60; min ++)
 		try {
-			String time = "2011-10-05";
+			String time = "2012-02-12";
 			
 			String hourTxt = "" + hour;
 			
 			String minTxt = "" + min;
 			if(min <10)	minTxt = "0" + minTxt;
 			
-			String sqlTxt = "select count(*) as cnt from tweet_2011_10 where published_time_GMT >= \'" + time + " " + hourTxt + ":" + minTxt + ":00\'" + 
+			String sqlTxt = "select count(*) as cnt from tweet_2012_02 where published_time_GMT >= \'" + time + " " + hourTxt + ":" + minTxt + ":00\'" + 
 					" and published_time_GMT <= \'" + time + " " + hourTxt + ":" + minTxt + ":59\'";
 			
 			stmt = conn.createStatement();
 
 			//sqlTxt += " and content like \'%jobs%\'";
 			//sqlTxt += " and content like \'% 56%\'";
-			sqlTxt += " and content like \'%steve%\'";
+			//sqlTxt += " and content like \'%steve%\'";
+			
+			
+			//sqlTxt += " and content like \'% good %\'";
+			//sqlTxt += " and content like \'% bodoh %\'";
+			//sqlTxt += " and content like \'% what %\'";
+			sqlTxt += " ";
+			//sqlTxt += " and content like \'%good night%\'";
+			//sqlTxt += " and content like \'% mama%\'";
+			//sqlTxt += " and content like \'%#mama%\'";
 			
 			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
@@ -354,7 +471,7 @@ public class LoadTweetsInFile {
 			stmt.setTimestamp(1, tweet.t);
 			stmt.setString(2, tweet.status_ID);
 			stmt.setString(3, tweet.user_ID);
-			stmt.setString(3, tweet.twt);
+			stmt.setString(4, tweet.twt);
 			
 			stmt.execute();
 		} catch (SQLException ex) {
