@@ -7,10 +7,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import cmu.arktweetnlp.Twokenize;
 
 public class Preprocess {
 	// downcasing
@@ -39,6 +42,70 @@ public class Preprocess {
 	}
 	
 	private static Map<String, Integer> counter = new TreeMap<String, Integer>();
+	
+	public static void doCounting(){
+		Timestamp startDay = Timestamp.valueOf("2011-01-01 00:00:00.0");
+		
+		Timestamp nextDay = new Timestamp(startDay.getTime()+oneDayLong);
+		
+		final Timestamp endDay = Timestamp.valueOf("2012-05-01 00:00:00.0");
+		//final Timestamp endDay = Timestamp.valueOf("2011-01-11 00:00:00.0");
+		
+		while(startDay.before(endDay)){
+			System.out.println(startDay);  // print info
+			
+			Statement stmt = null;
+			ResultSet rs = null;
+			try {
+				
+				stmt = conn.createStatement();
+				String sqlTxt = "select *  from stream2 where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
+				if (stmt.execute(sqlTxt)) {
+					rs = stmt.getResultSet();
+					while (rs.next()) {
+						Tweet tweet = new Tweet(rs.getString("user_ID"), rs.getString("status_ID"), rs.getString("tweet"), rs.getTimestamp("t"));
+						count(tweet);
+					}
+				}
+				
+				
+
+			} catch (SQLException ex) {
+				// handle any errors
+				System.out.println("SQLException: " + ex.getMessage());
+				System.out.println("SQLState: " + ex.getSQLState());
+				System.out.println("VendorError: " + ex.getErrorCode());
+
+			} finally {
+				// it is a good idea to release
+				// resources in a finally{} block
+				// in reverse-order of their creation
+				// if they are no-longer needed
+				if (rs != null) {
+					try {
+						rs.close();
+					} catch (SQLException sqlEx) {
+					} // ignore
+					rs = null;
+				}
+				if (stmt != null) {
+					try {
+						stmt.close();
+					} catch (SQLException sqlEx) {
+					} // ignore
+					stmt = null;
+				}
+			}
+			
+			startDay = nextDay;
+			nextDay = new Timestamp(startDay.getTime()+oneDayLong);
+		}
+		
+		System.out.println("Size of the counter" + counter.size());
+		for(Map.Entry<String, Integer> entry : counter.entrySet()){
+			saveCount(entry.getKey(),entry.getValue());
+		}
+	}
 	
 	public static void doJob(){
 		Timestamp startDay = Timestamp.valueOf("2011-01-01 00:00:00.0");
@@ -115,11 +182,13 @@ public class Preprocess {
 	}
 	
 	private static void count(Tweet tweet){
-		String[] terms = tweet.twt.split("\\s+");
+		//String[] terms = tweet.twt.split("[\\s!\\(\\)*+,-.:;<=>?\\[\\]^`\\{|\\}~\"]+"); // save # $ % & / \ @ ' _
+		List<String> terms = Twokenize.tokenize(tweet.twt);
 		
+		final String regex = "\\p{Punct}+";
 		Set<String> set = new TreeSet<String>();
 		for(String term : terms){
-			if(term.length() > 0){
+			if(term.length() > 0 && !term.matches(regex)){
 				set.add(term);
 			}
 		}
@@ -168,7 +237,7 @@ public class Preprocess {
 	}
 	
 	private static void saveCount(String term, int count){
-		String sqlStr = "insert into wordcount (word, count) values(?, ?) ";
+		String sqlStr = "insert into termcount (word, count) values(?, ?) "; // !!!!!
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(sqlStr);
