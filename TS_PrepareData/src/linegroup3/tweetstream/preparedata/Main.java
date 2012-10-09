@@ -19,7 +19,9 @@ public class Main {
 		
 		//StatisticTweets.roughAnalysisPerWeek2();
 		
-		Preprocess.doCounting();
+		//Preprocess.doCounting();
+		
+		//ConstructUserTable.doJob();
 		
 		/*
 		String str = "   	  \trt @::.1!!!!2ds\"fds\"fsd,3";
@@ -30,12 +32,17 @@ public class Main {
 		*/
 
 		/*
-		List<String> terms = Twokenize.tokenizeRawTweetText("araphoenix !!! . ! shares http://s3.amazonaws.com/piclyf_pics/16496_308118_b.jpg our new year shirt bit.ly/i4qymr /p/9xig48");
+		List<String> terms = Twokenize.tokenizeRawTweetText(";;;;;;;;;;;;;;;........................................................(");
 		for(String term : terms){
 			if(!term.matches("\\p{Punct}+"))
 				System.out.println(term);
 		}
 		*/
+		
+		for(long i = 1; i < 1000; i ++){
+			System.out.println("" + i + "\t:\t" + new Long(i).hashCode() % 1000);
+		}
+		
 		
 		/*
 		String str1 = "hellös";
