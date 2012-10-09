@@ -49,7 +49,6 @@ public class Preprocess {
 		Timestamp nextDay = new Timestamp(startDay.getTime()+oneDayLong);
 		
 		final Timestamp endDay = Timestamp.valueOf("2012-05-01 00:00:00.0");
-		//final Timestamp endDay = Timestamp.valueOf("2011-01-11 00:00:00.0");
 		
 		while(startDay.before(endDay)){
 			System.out.println(startDay);  // print info
@@ -183,7 +182,9 @@ public class Preprocess {
 	
 	private static void count(Tweet tweet){
 		//String[] terms = tweet.twt.split("[\\s!\\(\\)*+,-.:;<=>?\\[\\]^`\\{|\\}~\"]+"); // save # $ % & / \ @ ' _
-		List<String> terms = Twokenize.tokenize(tweet.twt);
+		String str = tweet.twt;
+		str = str.replaceAll("\\.{10,}+", " ");
+		List<String> terms = Twokenize.tokenize(str);
 		
 		final String regex = "\\p{Punct}+";
 		Set<String> set = new TreeSet<String>();
