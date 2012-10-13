@@ -107,7 +107,7 @@ public class StatisticTweets {
 	}
 	
 	static public void roughAnalysisPerDay(){
-		Timestamp startDay = Timestamp.valueOf("2011-01-01 00:00:00.0");
+		Timestamp startDay = Timestamp.valueOf("2011-09-01 00:00:00.0");
 		
 		Timestamp nextDay = new Timestamp(startDay.getTime()+oneDayLong);
 		
@@ -129,7 +129,7 @@ public class StatisticTweets {
 			try {
 				
 				stmt = conn.createStatement();
-				String sqlTxt = "select count(*) as cnt from stream where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
+				String sqlTxt = "select count(*) as cnt from stream3 where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
 				//System.out.println(sqlTxt);
 				if (stmt.execute(sqlTxt)) {
 					rs = stmt.getResultSet();
@@ -172,7 +172,7 @@ public class StatisticTweets {
 			try {
 				
 				stmt = conn.createStatement();
-				String sqlTxt = "select count(distinct user_ID) as cnt from stream where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
+				String sqlTxt = "select count(distinct user_ID) as cnt from stream3 where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
 				//System.out.println(sqlTxt);
 				if (stmt.execute(sqlTxt)) {
 					rs = stmt.getResultSet();
