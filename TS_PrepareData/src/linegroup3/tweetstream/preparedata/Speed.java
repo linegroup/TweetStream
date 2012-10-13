@@ -14,8 +14,8 @@ public class Speed {
 
 	static final long oneDayLong = 24 * 60 * 60 * 1000; // (ms)
 	
-	static final long smoothLength1 = 15; // minute
-	static final long smoothLength2 = 15; // minute
+	static final long smoothLength1 = 10; // minute
+	static final long smoothLength2 = 1; // minute
 	static final long oneMinute = 60 * 1000; // (ms)
 	
 
@@ -67,7 +67,7 @@ public class Speed {
 				stmt = conn.createStatement();
 				String sqlTxt = "select *  from stream3 where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
 				if (stmt.execute(sqlTxt)) {
-					Map<Timestamp, SVA> map = new TreeMap<Timestamp,SVA>();
+					TreeMap<Timestamp, SVA> map = new TreeMap<Timestamp,SVA>();
 					rs = stmt.getResultSet();
 					while (rs.next()) {
 						Timestamp t = rs.getTimestamp("t");
@@ -83,9 +83,22 @@ public class Speed {
 						
 						final long oneMinute = 60 * 1000;
 						
+						/*
 						if(t.getTime() % oneMinute == 0)
 							map.put(t, new SVA(s, v/smoothLength1, a/smoothLength2));
+						*/
 						
+						
+						
+						
+						Timestamp lastone = map.lowerKey(t);
+						if(lastone == null){
+							map.put(t, new SVA(s, v/smoothLength1, a/smoothLength2));
+						}else{
+							if(t.getTime() - lastone.getTime() >= oneMinute)
+								map.put(t, new SVA(s, v/smoothLength1, a/smoothLength2));
+						}
+
 						/*
 						if(dt == 0){
 							updateSpeed(t, s, v, a);
