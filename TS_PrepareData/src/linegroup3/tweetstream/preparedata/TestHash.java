@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
 
 public class TestHash {
 
@@ -37,17 +39,17 @@ public class TestHash {
 
 	static public void test1(int id) {
 		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter(
-					"./hash.text", true));
+
 			System.out.print(id + ":\t");
-			out.write(id + ":\t");
+			
 
 			int[] v = new int[5];
 			for (int i = 0; i < 5; i++) {
 				v[i] = HashFamily.hash(i, id);
 			}
 
-			for (int num = 1; num < 100000000; num++) {
+			List<Integer> list = new LinkedList<Integer>();
+			for (int num = 1; num < 10000000; num++) {
 				boolean output = true;
 				for (int i = 0; i < 5; i++) {
 					if (HashFamily.hash(i, num) != v[i]) {
@@ -57,12 +59,26 @@ public class TestHash {
 				}
 				if (output) {
 					System.out.print(num + ",");
-					out.write(num + ",");
+					
+					list.add(num);
 				}
 			}
 			System.out.println();
-			out.write("\n");
-			out.close();
+
+
+			
+			if(list.size() > 1){
+				BufferedWriter out = new BufferedWriter(new FileWriter(
+						"./hash.text", true));
+				out.write(id + ":\t");
+				for(int i : list){
+					out.write(i + ",");
+				}
+				out.write("\n");
+				out.close();
+			}
+			
+			
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
