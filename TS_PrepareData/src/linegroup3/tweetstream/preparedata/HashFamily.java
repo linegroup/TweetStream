@@ -33,16 +33,16 @@ public class HashFamily {
 			ret = hashBase.BKDRHash("yg" + i) % 200;
 		}break;
 		case 1:{
-			ret = hashBase.PJWHash("ko" + i) % 200;
+			ret = hashBase.APHash("ko" + i) % 200;
 		}break;
 		case 2:{
-			ret = hashBase.ELFHash("eq" + i) % 200;
+			ret = hashBase.DJBHash("eq" + i) % 200;
 		}break;
 		case 3:{
 			ret = hashBase.JSHash("mx" + i) % 200;
 		}break;
 		case 4:{
-			ret = hashBase.SDBMHash("wx" + i) % 200;
+			ret = hashBase.RSHash("wa" + i) % 200;
 		}break;
 		}
 		
