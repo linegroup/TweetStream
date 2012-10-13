@@ -46,6 +46,7 @@ public class HashFamily {
 		}break;
 		}
 		
+		if(ret < 0)	ret += 200;
 		return (int)ret;
 	}
 	
