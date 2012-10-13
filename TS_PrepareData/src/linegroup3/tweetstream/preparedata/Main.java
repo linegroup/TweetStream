@@ -22,6 +22,16 @@ public class Main {
 		//Preprocess.doCounting();
 		
 		//ConstructUserTable.doJob();
+		/*
+		Speed.doJob();
+		Speed.showDSpeed(Timestamp.valueOf("2011-10-03 00:00:00"), Timestamp.valueOf("2011-10-06 23:00:00"));
+		*/
+		
+		
+		//TestHash.doJob();
+		for(int i = 1; i < 10000; i ++)
+			TestHash.test1(i);
+		
 		
 		/*
 		String str = "   	  \trt @::.1!!!!2ds\"fds\"fsd,3";
@@ -39,9 +49,11 @@ public class Main {
 		}
 		*/
 		
+		/*
 		for(long i = 1; i < 1000; i ++){
 			System.out.println("" + i + "\t:\t" + new Long(i).hashCode() % 1000);
 		}
+		*/
 		
 		
 		/*
@@ -56,5 +68,23 @@ public class Main {
 		
 		
 	}
+	
+	/*
+	static public long hash64shift(long key)
+	{
+	  key = (~key) + (key << 21); // key = (key << 21) - key - 1;
+	  key = key ^ (key >>> 24);
+	  key = (key + (key << 3)) + (key << 8); // key * 265
+	  key = key ^ (key >>> 14);
+	  key = (key + (key << 2)) + (key << 4); // key * 21
+	  key = key ^ (key >>> 28);
+	  key = key + (key << 31);
+	  return key;
+	}
+	
+	*/
+	
+	
+	
 
 }
