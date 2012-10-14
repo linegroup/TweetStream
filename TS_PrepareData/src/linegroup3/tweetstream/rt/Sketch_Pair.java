@@ -3,14 +3,15 @@ package linegroup3.tweetstream.rt;
 import java.sql.Timestamp;
 
 public class Sketch_Pair {
-	public double value = 0;
-	public Timestamp modifiedTime = null;
+	private double value = 0;
+	private Timestamp time = null;
 	
-	public Sketch_Pair(Timestamp modifiedTime, double value){
+	public Sketch_Pair(Timestamp time, double value){
 		this.value = value;
-		this.modifiedTime = modifiedTime;
+		this.time = time;
 	}
 	
+	/*  NO COPY !!!!!!! LAZY COPY !!!!!! NO MODIFY !!!!!
 	public Sketch_Pair copy(){
 		Sketch_Pair ret = new Sketch_Pair(modifiedTime, value);
 		return ret;
@@ -20,17 +21,10 @@ public class Sketch_Pair {
 		modifiedTime = currentTime;
 		value = v;
 	}
+	*/
 	
-	public double pulse(Timestamp currentTime, double change, long smooth){
-		double dt = currentTime.getTime()-modifiedTime.getTime();
-		double e = 1;
-		if(smooth != 0) e = Math.exp(-dt/smooth);
-		
-		double newV = value*e + change;
-		double d = newV - value;
-		
-		modify(currentTime, newV);
-		return d;
-	}
+	public double getValue() { return value; }
+	
+	public Timestamp getTime()  { return time; }
 	
 }

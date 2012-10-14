@@ -5,8 +5,8 @@ import java.sql.Timestamp;
 public class Order_Sketch {
 	static private Timestamp t0 = new Timestamp(0);
 
-	private int H = 0;
-	private int N = 0;
+	public int H = 0;
+	public int N = 0;
 	
 	private Timestamp observedTime = null;
 	
@@ -40,23 +40,25 @@ public class Order_Sketch {
 		
 	}
 	
-	public Order_Sketch copy(){
-		Order_Sketch ret = new Order_Sketch(H, N);
+	public void copy(Order_Sketch ret){
+		ret.H = H;
+		ret.N = N;
+		ret.observe(observedTime);
 		
-		ret.zeroOrder = zeroOrder.copy();
+		ret.zeroOrder = zeroOrder;
 		
 		for(int h = 0; h < H; h ++){
 			
 			for(int i = 0; i < N; i ++){
-				ret.firstOrder[h][i] = firstOrder[h][i].copy();
+				ret.firstOrder[h][i] = firstOrder[h][i];
 				
 				for(int j = 0; j < N; j ++){
-					ret.secondOrder[h][i][j] = secondOrder[h][i][j].copy();
+					ret.secondOrder[h][i][j] = secondOrder[h][i][j];
 				}
 			}
 		}
 		
-		return ret;
+
 	}
 	
 	public void observe(Timestamp time){
@@ -65,5 +67,42 @@ public class Order_Sketch {
 	
 	public Timestamp getObservedTime(){
 		return observedTime;
+	}
+	
+	public double zeroOrderPulse(Timestamp currentTime, double change, long smooth){
+		double dt = currentTime.getTime() - zeroOrder.getTime().getTime();
+		double e = 1;
+		if(smooth != 0) e = Math.exp(-dt/smooth);
+		
+		double newV = zeroOrder.getValue()*e + change;
+		double d = newV - zeroOrder.getValue();
+		
+		zeroOrder = new Sketch_Pair(currentTime, newV);
+		return d;
+	}
+	
+	public double firstOrderPulse(Timestamp currentTime, double change, long smooth, int h, int i){
+		double dt = currentTime.getTime() - firstOrder[h][i].getTime().getTime();
+		double e = 1;
+		if(smooth != 0) e = Math.exp(-dt/smooth);
+		
+		double newV = firstOrder[h][i].getValue()*e + change;
+		double d = newV - firstOrder[h][i].getValue();
+		
+		firstOrder[h][i] = new Sketch_Pair(currentTime, newV);
+		return d;
+	}
+	
+	
+	public double secondOrderPulse(Timestamp currentTime, double change, long smooth, int h, int i, int j){
+		double dt = currentTime.getTime() - secondOrder[h][i][j].getTime().getTime();
+		double e = 1;
+		if(smooth != 0) e = Math.exp(-dt/smooth);
+		
+		double newV = secondOrder[h][i][j].getValue()*e + change;
+		double d = newV - secondOrder[h][i][j].getValue();
+		
+		secondOrder[h][i][j] = new Sketch_Pair(currentTime, newV);
+		return d;
 	}
 }

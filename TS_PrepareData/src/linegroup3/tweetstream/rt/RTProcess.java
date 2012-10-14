@@ -14,7 +14,7 @@ import linegroup3.tweetstream.preparedata.HashFamily;
 
 
 
-public class Process {
+public class RTProcess {
 	static final long oneDayLong = 24 * 60 * 60 * 1000; // (ms)
 	
 	static final long smoothLength1 = 15; // minute
@@ -46,12 +46,20 @@ public class Process {
 	private int N = 0;
 	
 	
-	private TreeMap<Timestamp, SVA_Sketch> sketchQueue = new TreeMap<Timestamp, SVA_Sketch>();
-	private int MAX_QUEUE_SIZE = 24*60 + 1; // unit: minute (one day)
 	
-	public Process(int H, int N){
+	private int LAG = 5; // Largest lag : one 5 minutes
+	private int MAX_QUEUE_SIZE = 24*60 + LAG; // unit: minute (one day)
+	private SVA_Sketch[] sketchQueue = new SVA_Sketch[MAX_QUEUE_SIZE];
+	private int head = 0;
+	private int tail = 0;
+	
+	public RTProcess(int H, int N){
 		this.H = H;
 		this.N = N;
+		
+		for(int i = 0; i < MAX_QUEUE_SIZE; i ++){
+			sketchQueue[i] = new SVA_Sketch(H, N);
+		}
 	}
 	
 	public void runTime(Timestamp start, Timestamp end){
@@ -89,13 +97,16 @@ public class Process {
 						////// for zero order
 						
 						ds = 1;
-						currentSketch.s.zeroOrder.pulse(t, ds, 0);
-						double dv = currentSketch.v.zeroOrder.pulse(t, ds/smoothLength1, smooth1);
-						currentSketch.a.zeroOrder.pulse(t, dv/smoothLength2, smooth2);
+						currentSketch.s.zeroOrderPulse(t, ds, 0);
+						double dv = currentSketch.v.zeroOrderPulse(t, ds/smoothLength1, smooth1);
+						currentSketch.a.zeroOrderPulse(t, dv/smoothLength2, smooth2);
 
 						////// counting
 						double l = 0; 
 						ArrayList<TreeMap<Integer, Integer>> counter = new ArrayList<TreeMap<Integer, Integer>>(H);
+						for(int h = 0; h < H; h ++){
+							counter.add(new TreeMap<Integer, Integer>());
+						}
 						String[] res = tweet.split(",");
 						for(String term : res){
 							if(term.length() > 1){
@@ -125,9 +136,10 @@ public class Process {
 
 								ds = count / l;
 
-								currentSketch.s.firstOrder[h][bucket].pulse(t,ds, 0);
-								dv = currentSketch.v.firstOrder[h][bucket].pulse(t, ds/smoothLength1, smooth1);
-								currentSketch.a.firstOrder[h][bucket].pulse(t, dv/smoothLength2, smooth2);
+								
+								currentSketch.s.firstOrderPulse(t, ds, 0, h, bucket);
+								dv = currentSketch.v.firstOrderPulse(t, ds/smoothLength1, smooth1, h, bucket);
+								currentSketch.a.firstOrderPulse(t, dv/smoothLength2, smooth2, h, bucket);
 								
 							}
 						}
@@ -150,9 +162,9 @@ public class Process {
 									}
 									ds /= l*(l-1);
 									
-									currentSketch.s.secondOrder[h][bucket_i][bucket_j].pulse(t,ds, 0);
-									dv = currentSketch.v.secondOrder[h][bucket_i][bucket_j].pulse(t, ds/smoothLength1, smooth1);
-									currentSketch.a.secondOrder[h][bucket_i][bucket_j].pulse(t, dv/smoothLength2, smooth2);
+									currentSketch.s.secondOrderPulse(t,ds, 0, h, bucket_i, bucket_j);
+									dv = currentSketch.v.secondOrderPulse(t, ds/smoothLength1, smooth1, h, bucket_i, bucket_j);
+									currentSketch.a.secondOrderPulse(t, dv/smoothLength2, smooth2, h, bucket_i, bucket_j);
 								}
 								
 							}
@@ -165,15 +177,20 @@ public class Process {
 						/////// cache snapshot
 						final long oneMinute = 60 * 1000;
 						
-						Timestamp lastone = sketchQueue.lowerKey(t);
-						if(lastone == null){
-							sketchQueue.put(t, currentSketch.copy());
+						Timestamp lastone = null;
+						if(head == tail){
+							currentSketch.copy(sketchQueue[tail]);
+							tail ++;
 						}else{
+							int index = (tail - 1) % MAX_QUEUE_SIZE;
+							SVA_Sketch lastSketch = sketchQueue[index];
+							lastone = lastSketch.time;
 							if(t.getTime() - lastone.getTime() >= oneMinute){
-								if(sketchQueue.size() >= MAX_QUEUE_SIZE){
-									sketchQueue.pollFirstEntry();
+								if(tail - head == MAX_QUEUE_SIZE){
+									head ++;
 								}
-								sketchQueue.put(t, currentSketch.copy());
+								currentSketch.copy(sketchQueue[tail % MAX_QUEUE_SIZE]);
+								tail ++;
 							}
 						}
 						
@@ -218,5 +235,7 @@ public class Process {
 			next = new Timestamp(start.getTime()+oneDayLong);
 		}
 	}
+	
+
 
 }

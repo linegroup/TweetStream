@@ -3,8 +3,8 @@ package linegroup3.tweetstream.rt;
 import java.sql.Timestamp;
 
 public class SVA_Sketch {
-	private int H = 0;
-	private int N = 0;
+	
+	public Timestamp time = null;
 	
 	public Order_Sketch s = null;
 	
@@ -13,25 +13,24 @@ public class SVA_Sketch {
 	public Order_Sketch a = null;
 	
 	public SVA_Sketch(int H, int N){
-		this.H = H;
-		this.N = N;
 		
 		s = new Order_Sketch(H, N);
 		v = new Order_Sketch(H, N);
 		a = new Order_Sketch(H, N);
 	}
 	
-	public SVA_Sketch copy(){
-		SVA_Sketch ret = new SVA_Sketch(H, N);
+	public void copy(SVA_Sketch ret){
+
+		ret.time = time;
 		
-		ret.s = s.copy();
-		ret.v = v.copy();
-		ret.a = a.copy();
+		s.copy(ret.s);
+		v.copy(ret.v);
+		a.copy(ret.a);
 		
-		return ret;
 	}
 	
 	public void observe(Timestamp time){
+		this.time = time;
 		s.observe(time);
 		v.observe(time);
 		a.observe(time);
