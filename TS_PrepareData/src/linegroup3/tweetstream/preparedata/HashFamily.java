@@ -51,16 +51,19 @@ public class HashFamily {
 	}
 	
 	
-	/*
-	private static long[] seeds = { 91, 101, 13, 701, 11011 };
-	private static long[] b = { 241, 9856, 28, 128535, 6732 };
+	/*////// NEED TEST MORE ??????????????????
+	private static long[] b = { 105037    , 105449    , 105907   , 105019    , 105613 };
+	private static long[] a = { 1093   , 2917   , 3911   , 2129 , 131 };
+	private static long P = 1300133;
 	public static int hash(int fun, int i) { // return 0~199 fun 0~4
-		long ret = (b[fun] + i*seeds[fun]) % 200 ;
+		long ret = ((a[fun] + i*b[fun]) % P ) % 200 ;
 		
+		if(ret < 0)	ret += 200;
 		return (int)ret;
 		
 	}
 	*/
+	
 	
 
 }
