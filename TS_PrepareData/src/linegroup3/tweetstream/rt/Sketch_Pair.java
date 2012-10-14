@@ -27,4 +27,10 @@ public class Sketch_Pair {
 	
 	public Timestamp getTime()  { return time; }
 	
+	public double getValue(Timestamp currentTime, long smooth){
+		double dt = currentTime.getTime() - time.getTime();
+		double e= Math.exp(dt / smooth);
+		return e*value;
+	}
+	
 }
