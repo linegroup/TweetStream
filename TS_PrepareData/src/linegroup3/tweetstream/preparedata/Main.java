@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import linegroup3.tweetstream.rt.*;
 
 import cmu.arktweetnlp.Twokenize;
 
@@ -22,16 +23,21 @@ public class Main {
 		//Preprocess.doCounting();
 		
 		//ConstructUserTable.doJob();
+		
 		/*
 		Speed.doJob();
 		Speed.showDSpeed(Timestamp.valueOf("2011-10-03 00:00:00"), Timestamp.valueOf("2011-10-06 23:00:00"));
 		*/
+		new RTProcess(5,200).runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		
+		
+
 		
 		//TestHash.doJob();
+		/*
 		for(int i = 1; i < 10000; i ++)
 			TestHash.test1(i);
-		
+		*/
 		
 		/*
 		String str = "   	  \trt @::.1!!!!2ds\"fds\"fsd,3";

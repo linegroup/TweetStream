@@ -14,8 +14,8 @@ public class Speed {
 
 	static final long oneDayLong = 24 * 60 * 60 * 1000; // (ms)
 	
-	static final long smoothLength1 = 10; // minute
-	static final long smoothLength2 = 1; // minute
+	static final long smoothLength1 = 15; // minute
+	static final long smoothLength2 = 5; // minute
 	static final long oneMinute = 60 * 1000; // (ms)
 	
 
