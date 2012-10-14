@@ -65,7 +65,7 @@ public class Speed {
 			try {
 				
 				stmt = conn.createStatement();
-				String sqlTxt = "select *  from stream3 where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
+				String sqlTxt = "select *  from idstream where t >= \'" + startDay + "\' and t < \'" + nextDay +"\'";
 				if (stmt.execute(sqlTxt)) {
 					TreeMap<Timestamp, SVA> map = new TreeMap<Timestamp,SVA>();
 					rs = stmt.getResultSet();
