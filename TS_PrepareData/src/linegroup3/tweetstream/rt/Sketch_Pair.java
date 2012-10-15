@@ -23,13 +23,15 @@ public class Sketch_Pair {
 	}
 	*/
 	
-	public double getValue() { return value; }
+	//public double getValue() { return value; }
 	
-	public Timestamp getTime()  { return time; }
+	//public Timestamp getTime()  { return time; }
 	
 	public double getValue(Timestamp currentTime, long smooth){
 		double dt = currentTime.getTime() - time.getTime();
-		double e= Math.exp(dt / smooth);
+		double e = 1;
+		if(smooth != 0)
+			e= Math.exp(-dt / smooth);
 		return e*value;
 	}
 	

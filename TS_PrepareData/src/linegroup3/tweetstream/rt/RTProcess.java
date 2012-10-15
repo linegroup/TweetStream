@@ -1,5 +1,8 @@
 package linegroup3.tweetstream.rt;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -18,7 +21,7 @@ public class RTProcess {
 	static final long oneDayLong = 24 * 60 * 60 * 1000; // (ms)
 	
 	static final long smoothLength1 = 15; // minute
-	static final long smoothLength2 = 5; // minute
+	static final long smoothLength2 = 5; // minute 
 	static final long oneMinute = 60 * 1000; // (ms)
 	
 
@@ -48,7 +51,7 @@ public class RTProcess {
 	
 	
 	private int LAG = 5; // Largest lag : one 5 minutes
-	private int MAX_QUEUE_SIZE = 24*60 + LAG; // unit: minute (one day)
+	private int MAX_QUEUE_SIZE = 60 + LAG; // unit: minute (one day)
 	private SVA_Sketch[] sketchQueue = new SVA_Sketch[MAX_QUEUE_SIZE];
 	private int head = 0;
 	private int tail = 0;
@@ -90,7 +93,6 @@ public class RTProcess {
 						final Timestamp t = rs.getTimestamp("t");
 						String tweet = rs.getString("tweet");
 						
-						currentSketch.observe(t);
 						
 						double ds = 0;
 						
@@ -100,6 +102,9 @@ public class RTProcess {
 						currentSketch.s.zeroOrderPulse(t, ds, 0);
 						double dv = currentSketch.v.zeroOrderPulse(t, ds/smoothLength1, smooth1);
 						currentSketch.a.zeroOrderPulse(t, dv/smoothLength2, smooth2);
+						
+						System.out.println("-----------------------------------------");
+						System.out.println(dv); ////////
 
 						////// counting
 						double l = 0; 
@@ -129,6 +134,7 @@ public class RTProcess {
 
 						////// for first order
 						for (int h = 0; h < H; h++) {
+							double sss = 0;
 							for (Map.Entry<Integer, Integer> entry : counter
 									.get(h).entrySet()) {
 								int bucket = entry.getKey();
@@ -141,7 +147,9 @@ public class RTProcess {
 								dv = currentSketch.v.firstOrderPulse(t, ds/smoothLength1, smooth1, h, bucket);
 								currentSketch.a.firstOrderPulse(t, dv/smoothLength2, smooth2, h, bucket);
 								
+								sss += dv;
 							}
+							System.out.println(sss);
 						}
 					
 						
@@ -173,6 +181,10 @@ public class RTProcess {
 						
 						/////// for difference
 						
+						
+						
+						////////////////// change observing time //////////////
+						currentSketch.observe(t);
 						
 						/////// cache snapshot
 						final long oneMinute = 60 * 1000;
@@ -236,6 +248,87 @@ public class RTProcess {
 		}
 	}
 	
-
+	private void saveSketchA(int h){
+		SVA_Sketch sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
+		String name = h + "_A_";
+		Timestamp currentTime = sketch.time;
+		String append = currentTime.toString();
+		append = append.replace(" ", "_").replace("-", "_").replace(":", "_").replace(".", "_");
+		append += ".txt";
+		
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter("./data/" + name + append));
+			for(int i = 0; i < N; i ++){
+				for(int j = 0; j < N; j ++){
+					out.write("\t " + sketch.a.secondOrder[h][i][j].getValue(currentTime, smoothLength2 * oneMinute));
+				}	
+				out.write("\n");
+			}
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
+	}
+	
+	
+	private void saveSketchV(int h){
+		SVA_Sketch sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
+		String name = h + "_V_";
+		Timestamp currentTime = sketch.time;
+		String append = currentTime.toString();
+		append = append.replace(" ", "_").replace("-", "_").replace(":", "_").replace(".", "_");
+		append += ".txt";
+		
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter("./data/" + name + append));
+			for(int i = 0; i < N; i ++){
+				for(int j = 0; j < N; j ++){
+					out.write("\t " + sketch.v.secondOrder[h][i][j].getValue(currentTime, smoothLength1 * oneMinute));
+				}	
+				out.write("\n");
+			}
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
+	}
+	
+	private void checkFirstOrder(){
+		SVA_Sketch sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
+		Timestamp currentTime = sketch.time;
+		System.out.println("Checking..." + currentTime);
+		{
+			double s = sketch.s.zeroOrder.getValue(currentTime, 0);
+			for(int h = 0; h < H; h ++){
+				double C = 0;
+				for(int i = 0; i < N; i ++){
+					C += sketch.s.firstOrder[h][i].getValue(currentTime, 0);
+				}
+				if(C != s) System.out.println("S Error!" + h + " " + Math.abs(C - s) + " " + s);
+			}	
+		}
+		
+		{
+			double v = sketch.v.zeroOrder.getValue(currentTime, smoothLength1 * oneMinute);
+			for(int h = 0; h < H; h ++){
+				double C = 0;
+				for(int i = 0; i < N; i ++){
+					C += sketch.v.firstOrder[h][i].getValue(currentTime, smoothLength1 * oneMinute);
+				}
+				if(C != v) System.out.println("V Error!" + h + " " + Math.abs(C - v) + " " + v);
+			}	
+		}
+		
+		{
+			double a = sketch.a.zeroOrder.getValue(currentTime, smoothLength2 * oneMinute);
+			for(int h = 0; h < H; h ++){
+				double C = 0;
+				for(int i = 0; i < N; i ++){
+					C += sketch.a.firstOrder[h][i].getValue(currentTime, smoothLength2 * oneMinute);
+				}
+				if(C != a) System.out.println("A Error!" + h + " " + (C - a) + " " + a);
+			}	
+		}
+	}
 
 }

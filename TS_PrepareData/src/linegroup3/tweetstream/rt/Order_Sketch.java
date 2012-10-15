@@ -70,24 +70,26 @@ public class Order_Sketch {
 	}
 	
 	public double zeroOrderPulse(Timestamp currentTime, double change, long smooth){
-		double dt = currentTime.getTime() - zeroOrder.getTime().getTime();
+		double dt = currentTime.getTime() - observedTime.getTime();
 		double e = 1;
 		if(smooth != 0) e = Math.exp(-dt/smooth);
 		
-		double newV = zeroOrder.getValue()*e + change;
-		double d = newV - zeroOrder.getValue();
+		double value = zeroOrder.getValue(observedTime, smooth);
+		double newV = value*e + change;
+		double d = newV - value;
 		
 		zeroOrder = new Sketch_Pair(currentTime, newV);
 		return d;
 	}
 	
 	public double firstOrderPulse(Timestamp currentTime, double change, long smooth, int h, int i){
-		double dt = currentTime.getTime() - firstOrder[h][i].getTime().getTime();
+		double dt = currentTime.getTime() - observedTime.getTime();
 		double e = 1;
 		if(smooth != 0) e = Math.exp(-dt/smooth);
 		
-		double newV = firstOrder[h][i].getValue()*e + change;
-		double d = newV - firstOrder[h][i].getValue();
+		double value = firstOrder[h][i].getValue(observedTime, smooth);
+		double newV = value*e + change;
+		double d = newV - value;
 		
 		firstOrder[h][i] = new Sketch_Pair(currentTime, newV);
 		return d;
@@ -95,12 +97,13 @@ public class Order_Sketch {
 	
 	
 	public double secondOrderPulse(Timestamp currentTime, double change, long smooth, int h, int i, int j){
-		double dt = currentTime.getTime() - secondOrder[h][i][j].getTime().getTime();
+		double dt = currentTime.getTime() - observedTime.getTime();
 		double e = 1;
 		if(smooth != 0) e = Math.exp(-dt/smooth);
 		
-		double newV = secondOrder[h][i][j].getValue()*e + change;
-		double d = newV - secondOrder[h][i][j].getValue();
+		double value = secondOrder[h][i][j].getValue(observedTime, smooth);
+		double newV = value*e + change;
+		double d = newV - value;
 		
 		secondOrder[h][i][j] = new Sketch_Pair(currentTime, newV);
 		return d;
