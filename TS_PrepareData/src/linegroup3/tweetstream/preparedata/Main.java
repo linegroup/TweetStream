@@ -28,8 +28,8 @@ public class Main {
 		Speed.doJob();
 		Speed.showDSpeed(Timestamp.valueOf("2011-10-03 00:00:00"), Timestamp.valueOf("2011-10-06 23:00:00"));
 		*/
-		new RTProcess(5,200).runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		
+		new RTProcess(5,200).runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		
 
 		
