@@ -1,5 +1,9 @@
 package linegroup3.tweetstream.rt2;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -11,6 +15,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
+import linegroup3.tweetstream.rt.SVA_Sketch;
 
 
 public class RTProcess {
@@ -41,7 +46,7 @@ public class RTProcess {
 		
 	
 	private int LAG = 5; // Largest lag : one 5 minutes
-	private int MAX_QUEUE_SIZE = 24*60 + LAG; // unit: minute (one day)
+	private int MAX_QUEUE_SIZE = 1*60 + LAG; // unit: minute (one day)
 	private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
 	private int head = 0;
 	private int tail = 0;
@@ -79,15 +84,6 @@ public class RTProcess {
 						final Timestamp t = rs.getTimestamp("t");
 						String tweet = rs.getString("tweet");
 						
-						currentSketch.observe(t);
-						
-						double ds = 0;
-						
-						////// for zero order
-						
-						ds = 1;
-						currentSketch.zeroOrderPulse(t, ds);
-
 						////// counting
 						double l = 0; 
 						ArrayList<TreeMap<Integer, Integer>> counter = new ArrayList<TreeMap<Integer, Integer>>(H);
@@ -96,7 +92,7 @@ public class RTProcess {
 						}
 						String[] res = tweet.split(",");
 						for(String term : res){
-							if(term.length() > 1){
+							if(term.length() >= 1){
 								int id = Integer.parseInt(term);
 								
 								for(int h = 0; h < H; h ++){
@@ -113,6 +109,21 @@ public class RTProcess {
 								l ++;
 							}
 						}
+						
+						if(l <= 1){/////////////////////////////// for debug
+							System.out.print("L i s less than 2!!!!!!!");
+							System.out.println(rs.getString("status_ID"));
+							continue;
+						}
+						
+						////////////////////////////////////////////////
+						
+						double ds = 0;
+						////// for zero order
+						
+						ds = 1;
+						currentSketch.zeroOrderPulse(t, ds);
+
 
 						////// for first order
 						for (int h = 0; h < H; h++) {
@@ -155,6 +166,9 @@ public class RTProcess {
 						
 						/////// for difference
 						
+						////////////////// change observing time //////////////
+						currentSketch.observe(t);
+						
 						
 						/////// cache snapshot
 						final long oneMinute = 60 * 1000;
@@ -167,6 +181,9 @@ public class RTProcess {
 							int index = (tail - 1) % MAX_QUEUE_SIZE;
 							Sketch lastSketch = sketchQueue[index];
 							lastone = lastSketch.getTime();
+							if(t.getTime() == lastone.getTime()){
+								currentSketch.copy(sketchQueue[index]);
+							}
 							if(t.getTime() - lastone.getTime() >= oneMinute){
 								if(tail - head == MAX_QUEUE_SIZE){
 									head ++;
@@ -216,5 +233,74 @@ public class RTProcess {
 			start = next;
 			next = new Timestamp(start.getTime()+oneDayLong);
 		}
+	}
+	
+	private void checkFirstOrder(){
+		//Sketch sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
+		Sketch sketch = currentSketch;
+		Timestamp currentTime = sketch.getTime();
+		System.out.println("Checking..." + currentTime);
+		
+		{
+			Sketch.Pair pair0 = sketch.zeroOrder.get(currentTime);
+			for(int h = 0; h < H; h ++){
+				double C_V = 0;
+				double C_A = 0;
+				for(int i = 0; i < N; i ++){
+					Sketch.Pair pair1 = sketch.firstOrder[h][i].get(currentTime);
+					C_V += pair1.v;
+					C_A += pair1.a;
+				}
+				if(Math.abs(C_V - pair0.v) > 1e-10) System.out.println("V Error!" + h + " " + (C_V - pair0.v) + " " + pair0.v);
+				if(Math.abs(C_A - pair0.a) > 1e-10) System.out.println("A Error!" + h + " " + (C_A - pair0.a) + " " + pair0.a);
+			}	
+		}
+		
+
+	}
+	
+	private void saveSketch(Sketch sketch){
+		if(sketch == null)
+			sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
+		Timestamp currentTime = sketch.getTime();
+		String dir = currentTime.toString();
+		dir = dir.replace(" ", "_").replace("-", "_").replace(":", "_").replace(".", "_");
+		dir = "./data/sketch/" + dir;
+		new File(dir).mkdir();
+		
+		
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(dir + "/zeroOrder.txt"));
+			out.write(sketch.outputZeroOrder());
+			out.close();
+			
+			String[] firstOrderA = sketch.outputFirstOrderA();
+			String[] firstOrderV = sketch.outputFirstOrderV();
+			String[] secondOrderA = sketch.outputSecondOrderA();
+			String[] secondOrderV = sketch.outputSecondOrderV();
+			for(int h = 0; h < H; h ++){
+				out = new BufferedWriter(new FileWriter(dir + "/firstOrderA_" + h + ".txt"));
+				out.write(firstOrderA[h]);
+				out.close();
+				
+				out = new BufferedWriter(new FileWriter(dir + "/firstOrderV_" + h + ".txt"));
+				out.write(firstOrderV[h]);
+				out.close();
+				
+				out = new BufferedWriter(new FileWriter(dir + "/secondOrderA_" + h + ".txt"));
+				out.write(secondOrderA[h]);
+				out.close();
+				
+				out = new BufferedWriter(new FileWriter(dir + "/secondOrderV_" + h + ".txt"));
+				out.write(secondOrderV[h]);
+				out.close();
+				
+					
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
+		
 	}
 }

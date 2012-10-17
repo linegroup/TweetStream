@@ -1,6 +1,7 @@
 package linegroup3.tweetstream.rt2;
 
 import java.sql.Timestamp;
+import java.util.TreeSet;
 
 
 public class Sketch {
@@ -16,7 +17,7 @@ public class Sketch {
 	static private Timestamp t0 = new Timestamp(0);
 
 	
-	private Timestamp Tstamp = null;
+	private Timestamp MainTstamp = null;
 	
 	public Unit zeroOrder = null;
 	
@@ -24,8 +25,10 @@ public class Sketch {
 	
 	public Unit[][][] secondOrder = null;
 	
+	static private TreeSet<Timestamp> checkpoints = new TreeSet<Timestamp>();
+	
 	public Sketch(){
-		Tstamp = t0;
+		MainTstamp = t0;
 		
 		zeroOrder = new Unit(t0, 0, 0);	
 		firstOrder = new Unit[H][N];
@@ -44,7 +47,7 @@ public class Sketch {
 	}
 	
 	public void copy(Sketch ret){
-		ret.observe(Tstamp);
+		ret.observe(MainTstamp);
 		
 		ret.zeroOrder = zeroOrder;
 		
@@ -61,20 +64,22 @@ public class Sketch {
 	}
 	
 	public void observe(Timestamp time){
-		Tstamp = time;
+		MainTstamp = time;
+		
+		checkpoints.add(time);
 	}
 	
 	public Timestamp getTime(){
-		return Tstamp;
+		return MainTstamp;
 	}
 	
 	public void zeroOrderPulse(Timestamp currentTime, double ds){
-		double dt = currentTime.getTime() - Tstamp.getTime();
+		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
 		double e_v = Math.exp(-dt/(smooth_V*oneMinute));
 		double e_a = Math.exp(-dt/(smooth_A*oneMinute));
 		
-		Pair pair = zeroOrder.get(Tstamp);
+		Pair pair = zeroOrder.get(MainTstamp);
 		
 		double newV = e_v*pair.v + ds / smooth_V;
 		double dv = newV - pair.v;
@@ -85,12 +90,12 @@ public class Sketch {
 	}
 	
 	public void firstOrderPulse(Timestamp currentTime, double ds, int h, int i){
-		double dt = currentTime.getTime() - Tstamp.getTime();
+		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
 		double e_v = Math.exp(-dt/(smooth_V*oneMinute));
 		double e_a = Math.exp(-dt/(smooth_A*oneMinute));
 		
-		Pair pair = firstOrder[h][i].get(Tstamp);
+		Pair pair = firstOrder[h][i].get(MainTstamp);
 		
 		double newV = e_v*pair.v + ds / smooth_V;
 		double dv = newV - pair.v;
@@ -101,18 +106,83 @@ public class Sketch {
 	
 	
 	public void secondOrderPulse(Timestamp currentTime, double ds, int h, int i, int j){
-		double dt = currentTime.getTime() - Tstamp.getTime();
+		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
 		double e_v = Math.exp(-dt/(smooth_V*oneMinute));
 		double e_a = Math.exp(-dt/(smooth_A*oneMinute));
 		
-		Pair pair = secondOrder[h][i][j].get(Tstamp);
+		Pair pair = secondOrder[h][i][j].get(MainTstamp);
 		
 		double newV = e_v*pair.v + ds / smooth_V;
 		double dv = newV - pair.v;
 		double newA = e_a*pair.a + dv / smooth_A;
 		
 		secondOrder[h][i][j] = new Unit(currentTime, newV, newA);
+	}
+	
+	public String outputZeroOrder(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("V:\t" + zeroOrder.v + "\n");
+		sb.append("A:\t" + zeroOrder.a + "\n");
+		return sb.toString();
+	}
+	
+	public String[] outputFirstOrderV(){
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				sb.append("\t" + firstOrder[h][i].v);
+			}
+			sb.append("\n");
+			ret[h] = sb.toString();
+		}
+		return ret;
+	}
+	
+	public String[] outputFirstOrderA(){
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				sb.append("\t" + firstOrder[h][i].a);
+			}
+			sb.append("\n");
+			ret[h] = sb.toString();
+		}
+		return ret;
+	}
+	
+	public String[] outputSecondOrderV(){
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				for(int j = 0; j < N; j ++){
+					sb.append("\t" + secondOrder[h][i][j].v);
+				}
+				sb.append("\n");
+			}
+			
+			ret[h] = sb.toString();
+		}
+		return ret;
+	}
+	
+	public String[] outputSecondOrderA(){
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				for(int j = 0; j < N; j ++){
+					sb.append("\t" + secondOrder[h][i][j].a);
+				}
+				sb.append("\n");
+			}
+			
+			ret[h] = sb.toString();
+		}
+		return ret;
 	}
 	
 	public class Unit{
@@ -133,8 +203,31 @@ public class Sketch {
 			double e_a = Math.exp(-dt/(smooth_A*oneMinute));
 			
 			double currentV = v*e_v;
-			double dv = currentV - v;
-			double currentA = a*e_a + dv;
+			
+			/////////////////////////////////
+			Timestamp initialPiont = Tstamp;
+			double initialA = a;
+			double initialV = v;
+			for(Timestamp timepoint :Sketch.checkpoints.subSet(Tstamp, time)){
+				if(timepoint.after(Tstamp)){
+					dt = timepoint.getTime() - initialPiont.getTime();
+					
+					e_v = Math.exp(-dt/(smooth_V*oneMinute));
+					e_a = Math.exp(-dt/(smooth_A*oneMinute));
+					
+					double tempV = initialV*e_v;
+					double tempA = initialA*e_a + (tempV - initialV) / smooth_A ;
+					
+					initialV = tempV;
+					initialA = tempA;
+					initialPiont = timepoint;
+				}
+			}
+			
+			dt = time.getTime() - initialPiont.getTime();
+			e_a = Math.exp(-dt/(smooth_A*oneMinute));
+			double dv = currentV - initialV;
+			double currentA = initialA*e_a + dv / smooth_A;
 			
 			return new Pair(currentV, currentA);
 		}	
