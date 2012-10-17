@@ -103,8 +103,8 @@ public class RTProcess {
 						double dv = currentSketch.v.zeroOrderPulse(t, ds/smoothLength1, smooth1);
 						currentSketch.a.zeroOrderPulse(t, dv/smoothLength2, smooth2);
 						
-						System.out.println("-----------------------------------------");
-						System.out.println(dv); ////////
+						//System.out.println("-----------------------------------------");
+						//System.out.println(dv); ////////
 
 						////// counting
 						double l = 0; 
@@ -149,7 +149,7 @@ public class RTProcess {
 								
 								sss += dv;
 							}
-							System.out.println(sss);
+							//System.out.println(sss);
 						}
 					
 						
@@ -197,12 +197,19 @@ public class RTProcess {
 							int index = (tail - 1) % MAX_QUEUE_SIZE;
 							SVA_Sketch lastSketch = sketchQueue[index];
 							lastone = lastSketch.time;
+							if(t.getTime() == lastone.getTime()){
+								currentSketch.copy(sketchQueue[index]);
+								
+								checkFirstOrder();
+							}
 							if(t.getTime() - lastone.getTime() >= oneMinute){
 								if(tail - head == MAX_QUEUE_SIZE){
 									head ++;
 								}
 								currentSketch.copy(sketchQueue[tail % MAX_QUEUE_SIZE]);
 								tail ++;
+								
+								checkFirstOrder();
 							}
 						}
 						
