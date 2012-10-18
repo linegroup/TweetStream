@@ -7,8 +7,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class ActiveTerm {
-	private final int InitialCapacity = 10000;
-	private final long timeInterval = 15*60*1000; // 15 minutes
+	private final int InitialCapacity = 100000;
+	private long timeInterval = 15*60*1000; // default 15 minutes
 	
 	private PriorityQueue<TermTimePair> queue = new PriorityQueue<TermTimePair>(InitialCapacity, new Comparator<TermTimePair>(){
 		@Override
@@ -18,6 +18,14 @@ public class ActiveTerm {
 			return 0;
 		}
 	});
+	
+	public ActiveTerm(){
+		
+	}
+	
+	public ActiveTerm(long timeInterval){
+		this.timeInterval = timeInterval;
+	}
 	
 	public boolean isActive(int id){
 		for(TermTimePair pair : queue){
