@@ -12,10 +12,10 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
-import linegroup3.tweetstream.rt.SVA_Sketch;
 
 
 public class RTProcess {
@@ -50,6 +50,8 @@ public class RTProcess {
 	private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
 	private int head = 0;
 	private int tail = 0;
+	
+	private ActiveTerm activeTerms = new ActiveTerm();
 	
 	public RTProcess(){		
 		for(int i = 0; i < MAX_QUEUE_SIZE; i ++){
@@ -94,6 +96,8 @@ public class RTProcess {
 						for(String term : res){
 							if(term.length() >= 1){
 								int id = Integer.parseInt(term);
+								
+								activeTerms.active(id, t);
 								
 								for(int h = 0; h < H; h ++){
 									int bucket = HashFamily.hash(h, id);
@@ -298,9 +302,26 @@ public class RTProcess {
 					
 			}
 			
+			saveActiveTerms(dir);
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}	
+		
+	}
+	
+	private void saveActiveTerms(String dir){
+		BufferedWriter out;
+		try {
+			out = new BufferedWriter(new FileWriter(dir + "/actives.txt"));
+			Set<Integer> terms = activeTerms.activeTerms();
+			for(int term : terms){
+				out.write(term + "\n");
+			}
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 }
