@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import linegroup.tweetstream.distribution.DistributionTest;
 import linegroup3.tweetstream.inference.ParallelInfer;
 import linegroup3.tweetstream.rt2.*;
 
@@ -34,13 +35,21 @@ public class Main {
 		//new RTProcess().runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		//new RTProcess().runTime(Timestamp.valueOf("2011-10-05 15:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		
-		new ParallelInfer().infer();
+		//new ParallelInfer().infer();
 		
 		//TestHash.doJob();
+		
 		/*
-		for(int i = 1; i < 10000; i ++)
+		for(int i = 1; i < 10000000; i ++)
 			TestHash.test1(i);
 		*/
+		
+		
+		DistributionTest.test2(100000);
+
+		
+		
+		
 		
 		/*
 		String str = "   	  \trt @::.1!!!!2ds\"fds\"fsd,3";
