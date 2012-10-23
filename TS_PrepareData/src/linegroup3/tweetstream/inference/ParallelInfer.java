@@ -90,14 +90,15 @@ public class ParallelInfer {
 				x[h][k][i] /= s;
 			}
 		}
-		w[0] = 0.6 * Lambda;
-		for(int k = 1; k < K; k ++){
-			w[k] = 0.1 * Lambda;
-		}
 		/*
+		w[0] = 0.8 * Lambda;
+		for(int k = 1; k < K; k ++){
+			w[k] = 0.05 * Lambda;
+		}*/
+		
 		for(int k = 0; k < K; k ++){
 			w[k] = Lambda*2*(K-k)/(K*(K+1));
-		}*/
+		}
 	}
 	
 	private double searchLambda() {// weight
