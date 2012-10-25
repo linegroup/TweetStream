@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
+import linegroup3.tweetstream.rt2.sket.Estimator;
 import linegroup3.tweetstream.rt2.sket.OutputSketch;
 import linegroup3.tweetstream.rt2.sket.Pair;
 import linegroup3.tweetstream.rt2.sket.Sketch;
@@ -70,9 +71,7 @@ public class RTProcess {
 		Timestamp next = new Timestamp(start.getTime()+oneDayLong);
 		
 		
-		currentSketch = new Sketch();
-		Sketch dSketch = new Sketch();
-		
+		currentSketch = new Sketch();		
 
 		while(start.before(end)){
 			System.out.println("Processing : " + start);  // print info
@@ -266,7 +265,7 @@ public class RTProcess {
 
 	}
 	
-	private void saveSketch(Sketch sketch){
+	private void saveSketch(Sketch sketch) throws Exception{
 		if(sketch == null)
 			sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
 		Timestamp currentTime = sketch.getTime();
@@ -312,6 +311,59 @@ public class RTProcess {
 			e.printStackTrace();
 		}	
 		
+		saveSketchDiff(dir, sketch);
+		
+	}
+	
+	
+	private void saveSketchDiff(String dir, Sketch sketch) throws Exception{
+		Timestamp t = sketch.getTime();
+		t = new Timestamp(t.getTime() - CYCLE * 60 * 1000);
+		
+		int index = head;
+		Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
+		while(sketch2.getTime().before(t)){
+			index ++;
+			sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
+		}
+		
+		Sketch sketch1 = sketchQueue[(index - 1) % MAX_QUEUE_SIZE];
+		
+		Estimator estimator = new Estimator(sketch1, sketch2, t);
+		
+		
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(dir + "/diff_zeroOrder.txt"));
+			out.write(OutputSketch.outputZeroOrder(estimator.zeroOrderDiff(sketch)));
+			out.close();
+			
+			String[] firstOrderA = OutputSketch.outputFirstOrderA(estimator.firstOrderDiff(sketch));
+			String[] firstOrderV = OutputSketch.outputFirstOrderV(estimator.firstOrderDiff(sketch));
+			String[] secondOrderA = OutputSketch.outputSecondOrderA(estimator.secondOrderDiff(sketch));
+			String[] secondOrderV = OutputSketch.outputSecondOrderV(estimator.secondOrderDiff(sketch));
+			for(int h = 0; h < H; h ++){
+				out = new BufferedWriter(new FileWriter(dir + "/diff_firstOrderA_" + h + ".txt"));
+				out.write(firstOrderA[h]);
+				out.close();
+				
+				out = new BufferedWriter(new FileWriter(dir + "/diff_firstOrderV_" + h + ".txt"));
+				out.write(firstOrderV[h]);
+				out.close();
+				
+				out = new BufferedWriter(new FileWriter(dir + "/diff_secondOrderA_" + h + ".txt"));
+				out.write(secondOrderA[h]);
+				out.close();
+				
+				out = new BufferedWriter(new FileWriter(dir + "/diff_secondOrderV_" + h + ".txt"));
+				out.write(secondOrderV[h]);
+				out.close();
+				
+					
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
 	}
 	
 	private void saveActiveTerms(String dir){

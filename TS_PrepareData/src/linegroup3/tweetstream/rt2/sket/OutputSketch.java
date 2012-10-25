@@ -87,4 +87,84 @@ public class OutputSketch {
 		return ret;
 	}
 	
+	public static String outputZeroOrder(Pair pair){
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("V:\t" + pair.v + "\n");
+		sb.append("A:\t" + pair.a + "\n");
+		return sb.toString();
+	}
+	
+	public static String[] outputFirstOrderV(Pair[][] pairs){
+		int H = Sketch.H;
+		int N = Sketch.N;
+
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				Pair pair = pairs[h][i];
+				sb.append("\t" + pair.v);
+			}
+			sb.append("\n");
+			ret[h] = sb.toString();
+		}
+		return ret;
+	}
+	
+	
+	public static String[] outputFirstOrderA(Pair[][] pairs){
+		int H = Sketch.H;
+		int N = Sketch.N;
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				Pair pair = pairs[h][i];
+				sb.append("\t" + pair.a);
+			}
+			sb.append("\n");
+			ret[h] = sb.toString();
+		}
+		return ret;
+	}
+	
+	public static String[] outputSecondOrderV(Pair[][][] pairs){
+		int H = Sketch.H;
+		int N = Sketch.N;
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				for(int j = 0; j < N; j ++){
+					Pair pair = pairs[h][i][j];
+					sb.append("\t" + pair.v);
+				}
+				sb.append("\n");
+			}
+			
+			ret[h] = sb.toString();
+		}
+		return ret;
+	}
+	
+	public static String[] outputSecondOrderA(Pair[][][] pairs){
+		int H = Sketch.H;
+		int N = Sketch.N;
+		String[] ret = new String[H];
+		for(int h = 0; h < H; h ++){
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < N; i ++){
+				for(int j = 0; j < N; j ++){
+					Pair pair = pairs[h][i][j];
+					sb.append("\t" + pair.a);
+				}
+				sb.append("\n");
+			}
+			
+			ret[h] = sb.toString();
+		}
+		return ret;
+	}
+	
 }
