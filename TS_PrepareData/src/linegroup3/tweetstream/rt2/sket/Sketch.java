@@ -172,14 +172,7 @@ public class Sketch {
 
 	}
 	
-	public class Pair{
-		public double v = 0;
-		public double a = 0;
-		public Pair(double v, double a){
-			this.v = v;
-			this.a = a;
-		}
-	}
+
 	
 	
 }

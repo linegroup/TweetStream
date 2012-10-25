@@ -17,6 +17,7 @@ import java.util.TreeMap;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.sket.OutputSketch;
+import linegroup3.tweetstream.rt2.sket.Pair;
 import linegroup3.tweetstream.rt2.sket.Sketch;
 
 
@@ -249,12 +250,12 @@ public class RTProcess {
 		System.out.println("Checking..." + currentTime);
 		
 		{
-			Sketch.Pair pair0 = sketch.zeroOrder.get(currentTime);
+			Pair pair0 = sketch.zeroOrder.get(currentTime);
 			for(int h = 0; h < H; h ++){
 				double C_V = 0;
 				double C_A = 0;
 				for(int i = 0; i < N; i ++){
-					Sketch.Pair pair1 = sketch.firstOrder[h][i].get(currentTime);
+					Pair pair1 = sketch.firstOrder[h][i].get(currentTime);
 					C_V += pair1.v;
 					C_A += pair1.a;
 				}
@@ -341,7 +342,7 @@ public class RTProcess {
 				while(index != tail){
 					Sketch sketch = sketchQueue[index % MAX_QUEUE_SIZE];
 					Timestamp t = sketch.getTime();
-					Sketch.Pair pair = sketch.firstOrder[h][n].get(t);
+					Pair pair = sketch.firstOrder[h][n].get(t);
 					out_V.write("\t" + pair.v);
 					out_A.write("\t" + pair.a);
 					

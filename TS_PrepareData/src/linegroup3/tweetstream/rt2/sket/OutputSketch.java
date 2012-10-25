@@ -6,7 +6,7 @@ public class OutputSketch {
 	public static String outputZeroOrder(Sketch sketch){
 		StringBuilder sb = new StringBuilder();
 		Timestamp t = sketch.getTime();
-		Sketch.Pair pair = sketch.zeroOrder.get(t);
+		Pair pair = sketch.zeroOrder.get(t);
 		sb.append("V:\t" + pair.v + "\n");
 		sb.append("A:\t" + pair.a + "\n");
 		return sb.toString();
@@ -20,7 +20,7 @@ public class OutputSketch {
 		for(int h = 0; h < H; h ++){
 			StringBuilder sb = new StringBuilder();
 			for(int i = 0; i < N; i ++){
-				Sketch.Pair pair = sketch.firstOrder[h][i].get(t);
+				Pair pair = sketch.firstOrder[h][i].get(t);
 				sb.append("\t" + pair.v);
 			}
 			sb.append("\n");
@@ -38,7 +38,7 @@ public class OutputSketch {
 		for(int h = 0; h < H; h ++){
 			StringBuilder sb = new StringBuilder();
 			for(int i = 0; i < N; i ++){
-				Sketch.Pair pair = sketch.firstOrder[h][i].get(t);
+				Pair pair = sketch.firstOrder[h][i].get(t);
 				sb.append("\t" + pair.a);
 			}
 			sb.append("\n");
@@ -56,7 +56,7 @@ public class OutputSketch {
 			StringBuilder sb = new StringBuilder();
 			for(int i = 0; i < N; i ++){
 				for(int j = 0; j < N; j ++){
-					Sketch.Pair pair = sketch.secondOrder[h][i][j].get(t);
+					Pair pair = sketch.secondOrder[h][i][j].get(t);
 					sb.append("\t" + pair.v);
 				}
 				sb.append("\n");
@@ -76,7 +76,7 @@ public class OutputSketch {
 			StringBuilder sb = new StringBuilder();
 			for(int i = 0; i < N; i ++){
 				for(int j = 0; j < N; j ++){
-					Sketch.Pair pair = sketch.secondOrder[h][i][j].get(t);
+					Pair pair = sketch.secondOrder[h][i][j].get(t);
 					sb.append("\t" + pair.a);
 				}
 				sb.append("\n");
