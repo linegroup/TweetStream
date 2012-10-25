@@ -45,7 +45,7 @@ public class RTProcess {
 	}
 		
 	
-	private int LAG = 5; // Largest lag : one 5 minutes
+	private int LAG = 5; // Largest lag :  5 minutes
 	private int CYCLE = 1*60;
 	private int MAX_QUEUE_SIZE = CYCLE + LAG; // unit: minute (one day)
 	private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
