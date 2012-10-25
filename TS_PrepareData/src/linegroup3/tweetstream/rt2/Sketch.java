@@ -135,6 +135,8 @@ public class Sketch {
 		public Pair get(Timestamp time){			
 			double dt = time.getTime() - Tstamp.getTime();
 			
+			if(dt == 0)	return new Pair(v, a);
+			
 			double e_v = Math.exp(-dt/(smooth_V*oneMinute));
 			double e_a = Math.exp(-dt/(smooth_A*oneMinute));
 			
