@@ -171,12 +171,11 @@ public class RTProcess {
 							}
 						}	
 						
-						
-						/////// for difference
-						
+											
 						////////////////// change observing time //////////////
 						currentSketch.observe(t);
 						
+						/////// for difference
 						
 						/////// cache snapshot
 						final long oneMinute = 60 * 1000;
