@@ -28,7 +28,7 @@ public class ParallelInfer {
 	private double[] w = null; // guess for lambda, w means weight
 
 	private int MAX_SEARCH_STEP = 1000;
-	private double M = 1e-2;
+	private double M = 1e-3;
 	
 
 	private final int N = 200;
@@ -41,7 +41,7 @@ public class ParallelInfer {
 	private Set<Integer> actives = new TreeSet<Integer>();
 	
 	public void infer(){
-		load("C:/Users/wei.xie.2012/Documents/GitHub/TweetStream/TS_PrepareData/data/sketch/2011_10_05_15_46_15_0", 'A');
+		load("C:/Users/wei.xie.2012/Documents/GitHub/TweetStream/TS_PrepareData/data/sketch/2011_10_05_15_45_35_0", 'A');
 		initial();
 		F();
 		for (int n = 0; n < 30; n++) {
@@ -90,9 +90,9 @@ public class ParallelInfer {
 				x[h][k][i] /= s;
 			}
 		}
-		w[0] = 0.8 * Lambda;
+		w[0] = 0.6 * Lambda;
 		for(int k = 1; k < K; k ++){
-			w[k] = 0.05 * Lambda;
+			w[k] = 0.1 * Lambda;
 		}
 		/*
 		for(int k = 0; k < K; k ++){
