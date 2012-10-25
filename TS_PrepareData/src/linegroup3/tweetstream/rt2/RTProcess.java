@@ -16,9 +16,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
-import linegroup3.tweetstream.rt2.sketch.OutputSketch;
-import linegroup3.tweetstream.rt2.sketch.Sketch;
-import linegroup3.tweetstream.rt2.sketch.Pair;
+
 
 public class RTProcess {
 	static final long oneDayLong = 24 * 60 * 60 * 1000; // (ms)
@@ -70,6 +68,7 @@ public class RTProcess {
 		
 		
 		currentSketch = new Sketch();
+		Sketch dSketch = new Sketch();
 		
 
 		while(start.before(end)){
@@ -170,12 +169,11 @@ public class RTProcess {
 						}	
 						
 						
+						/////// for difference
 						
 						////////////////// change observing time //////////////
 						currentSketch.observe(t);
 						
-						/////// for difference
-
 						
 						/////// cache snapshot
 						final long oneMinute = 60 * 1000;
@@ -249,12 +247,12 @@ public class RTProcess {
 		System.out.println("Checking..." + currentTime);
 		
 		{
-			Pair pair0 = sketch.zeroOrder.get(currentTime);
+			Sketch.Pair pair0 = sketch.zeroOrder.get(currentTime);
 			for(int h = 0; h < H; h ++){
 				double C_V = 0;
 				double C_A = 0;
 				for(int i = 0; i < N; i ++){
-					Pair pair1 = sketch.firstOrder[h][i].get(currentTime);
+					Sketch.Pair pair1 = sketch.firstOrder[h][i].get(currentTime);
 					C_V += pair1.v;
 					C_A += pair1.a;
 				}
@@ -341,7 +339,7 @@ public class RTProcess {
 				while(index != tail){
 					Sketch sketch = sketchQueue[index % MAX_QUEUE_SIZE];
 					Timestamp t = sketch.getTime();
-					Pair pair = sketch.firstOrder[h][n].get(t);
+					Sketch.Pair pair = sketch.firstOrder[h][n].get(t);
 					out_V.write("\t" + pair.v);
 					out_A.write("\t" + pair.a);
 					
