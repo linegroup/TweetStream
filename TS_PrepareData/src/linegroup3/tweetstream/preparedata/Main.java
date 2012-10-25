@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import linegroup.tweetstream.distribution.DistributionTest;
+import linegroup3.tweetstream.distribution.DistributionTest;
 import linegroup3.tweetstream.inference.ParallelInfer;
 import linegroup3.tweetstream.rt2.*;
 
@@ -32,8 +32,8 @@ public class Main {
 		//Speed.showDSpeed(Timestamp.valueOf("2011-10-03 00:00:00"), Timestamp.valueOf("2011-10-06 23:00:00"));
 		
 		
-		//new RTProcess().runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
-		//new RTProcess().runTime(Timestamp.valueOf("2011-10-05 15:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
+		new RTProcess().runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
+		//new RTProcess().runTime(Timestamp.valueOf("2011-10-05 10:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		
 		//new ParallelInfer().infer();
 		
@@ -45,7 +45,7 @@ public class Main {
 		*/
 		
 		
-		DistributionTest.test2(100000);
+		//DistributionTest.test2(100000);
 
 		
 		
