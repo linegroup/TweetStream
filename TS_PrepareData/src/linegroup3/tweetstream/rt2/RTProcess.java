@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
+import linegroup3.tweetstream.rt2.sket.OutputSketch;
+import linegroup3.tweetstream.rt2.sket.Sketch;
 
 
 public class RTProcess {

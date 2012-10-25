@@ -1,4 +1,4 @@
-package linegroup3.tweetstream.rt2;
+package linegroup3.tweetstream.rt2.sket;
 
 import java.sql.Timestamp;
 import java.util.TreeSet;
