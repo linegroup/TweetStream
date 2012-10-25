@@ -33,7 +33,7 @@ public class Main {
 		
 		
 		//new RTProcess().runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
-		//new RTProcess().runTime(Timestamp.valueOf("2011-10-05 15:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
+		new RTProcess().runTime(Timestamp.valueOf("2011-10-05 15:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		
 		//new ParallelInfer().infer();
 		
@@ -45,7 +45,7 @@ public class Main {
 		*/
 		
 		
-		DistributionTest.test2(100000);
+		//DistributionTest.test2(100000);
 
 		
 		
