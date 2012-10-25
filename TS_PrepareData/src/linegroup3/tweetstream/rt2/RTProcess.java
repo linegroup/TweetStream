@@ -46,7 +46,8 @@ public class RTProcess {
 		
 	
 	private int LAG = 5; // Largest lag : one 5 minutes
-	private int MAX_QUEUE_SIZE = 1*60 + LAG; // unit: minute (one day)
+	private int CYCLE = 1*60;
+	private int MAX_QUEUE_SIZE = CYCLE + LAG; // unit: minute (one day)
 	private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
 	private int head = 0;
 	private int tail = 0;
@@ -275,13 +276,13 @@ public class RTProcess {
 		
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(dir + "/zeroOrder.txt"));
-			out.write(sketch.outputZeroOrder());
+			out.write(OutputSketch.outputZeroOrder(sketch));
 			out.close();
 			
-			String[] firstOrderA = sketch.outputFirstOrderA();
-			String[] firstOrderV = sketch.outputFirstOrderV();
-			String[] secondOrderA = sketch.outputSecondOrderA();
-			String[] secondOrderV = sketch.outputSecondOrderV();
+			String[] firstOrderA = OutputSketch.outputFirstOrderA(sketch);
+			String[] firstOrderV = OutputSketch.outputFirstOrderV(sketch);
+			String[] secondOrderA = OutputSketch.outputSecondOrderA(sketch);
+			String[] secondOrderV = OutputSketch.outputSecondOrderV(sketch);
 			for(int h = 0; h < H; h ++){
 				out = new BufferedWriter(new FileWriter(dir + "/firstOrderA_" + h + ".txt"));
 				out.write(firstOrderA[h]);
@@ -302,6 +303,7 @@ public class RTProcess {
 					
 			}
 			
+			trackFirstOrder(dir);
 			saveActiveTerms(dir);
 			
 		} catch (IOException e) {
@@ -324,4 +326,35 @@ public class RTProcess {
 		}
 		
 	}
+	
+	private void trackFirstOrder(String dir){
+		BufferedWriter out_V, out_A;
+		for(int h = 0; h < H; h ++)
+		try {
+			out_V = new BufferedWriter(new FileWriter(dir + "/trace_V_" + h + ".txt"));
+			out_A = new BufferedWriter(new FileWriter(dir + "/trace_A_" + h + ".txt"));
+			
+			for(int n = 0; n < N; n ++){
+				int index = head;
+				while(index != tail){
+					Sketch sketch = sketchQueue[index % MAX_QUEUE_SIZE];
+					Timestamp t = sketch.getTime();
+					Sketch.Pair pair = sketch.firstOrder[h][n].get(t);
+					out_V.write("\t" + pair.v);
+					out_A.write("\t" + pair.a);
+					
+					index ++;
+				}
+				out_V.write("\n");
+				out_A.write("\n");
+			}
+			
+			out_V.close();
+			out_A.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
 }
