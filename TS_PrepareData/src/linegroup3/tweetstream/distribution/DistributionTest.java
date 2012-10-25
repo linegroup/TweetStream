@@ -1,4 +1,4 @@
-package linegroup.tweetstream.distribution;
+package linegroup3.tweetstream.distribution;
 
 import java.util.Random;
 

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import linegroup.tweetstream.distribution.DistributionTest;
+import linegroup3.tweetstream.distribution.DistributionTest;
 import linegroup3.tweetstream.inference.ParallelInfer;
 import linegroup3.tweetstream.rt2.*;
 
