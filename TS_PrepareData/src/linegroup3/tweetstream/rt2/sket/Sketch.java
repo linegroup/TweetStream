@@ -76,8 +76,13 @@ public class Sketch {
 	public void zeroOrderPulse(Timestamp currentTime, double ds){
 		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
-		double e_v = Math.exp(-dt/(smooth_V*oneMinute));
-		double e_a = Math.exp(-dt/(smooth_A*oneMinute));
+		double e_v = 1.0;
+		double e_a = 1.0;
+		
+		if(dt != 0){
+			e_v = Math.exp(-dt/(smooth_V*oneMinute));
+			e_a = Math.exp(-dt/(smooth_A*oneMinute));
+		}
 		
 		Pair pair = zeroOrder.get(MainTstamp);
 		
@@ -92,8 +97,13 @@ public class Sketch {
 	public void firstOrderPulse(Timestamp currentTime, double ds, int h, int i){
 		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
-		double e_v = Math.exp(-dt/(smooth_V*oneMinute));
-		double e_a = Math.exp(-dt/(smooth_A*oneMinute));
+		double e_v = 1.0;
+		double e_a = 1.0;
+		
+		if(dt != 0){
+			e_v = Math.exp(-dt/(smooth_V*oneMinute));
+			e_a = Math.exp(-dt/(smooth_A*oneMinute));
+		}
 		
 		Pair pair = firstOrder[h][i].get(MainTstamp);
 		
@@ -108,8 +118,13 @@ public class Sketch {
 	public void secondOrderPulse(Timestamp currentTime, double ds, int h, int i, int j){
 		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
-		double e_v = Math.exp(-dt/(smooth_V*oneMinute));
-		double e_a = Math.exp(-dt/(smooth_A*oneMinute));
+		double e_v = 1.0;
+		double e_a = 1.0;
+		
+		if(dt != 0){
+			e_v = Math.exp(-dt/(smooth_V*oneMinute));
+			e_a = Math.exp(-dt/(smooth_A*oneMinute));
+		}
 		
 		Pair pair = secondOrder[h][i][j].get(MainTstamp);
 		
