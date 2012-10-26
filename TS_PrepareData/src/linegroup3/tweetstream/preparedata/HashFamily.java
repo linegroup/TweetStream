@@ -1,6 +1,5 @@
 package linegroup3.tweetstream.preparedata;
 
-import java.util.Random;
 
 public class HashFamily {
 
