@@ -200,11 +200,8 @@ public class RTProcess {
 						}
 						
 						
-
-						
 					}
-
-					
+	
 				}
 				
 				
@@ -236,9 +233,17 @@ public class RTProcess {
 				}
 			}
 			
+			
+			clearSketchCheckpoints();
+			
 			start = next;
 			next = new Timestamp(start.getTime()+oneDayLong);
 		}
+	}
+	
+	private void clearSketchCheckpoints(){
+		Sketch sketch = sketchQueue[head % MAX_QUEUE_SIZE];
+		Sketch.clearCheckpoints(sketch.getTime());
 	}
 	
 	private void checkFirstOrder(){
