@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.sket.Estimator;
@@ -77,6 +80,9 @@ public class RTProcess {
 		}
 	}
 	
+	private static final int THREAD_POOL_SIZE = 2 * H;
+	private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);	
+	
 	private int LAG = 5; // Largest lag :  5 minutes
 	private int CYCLE = 1*60;
 	private int MAX_QUEUE_SIZE = CYCLE + LAG; // unit: minute (one day)
@@ -113,6 +119,8 @@ public class RTProcess {
 					
 					rs = stmt.getResultSet();
 					while (rs.next()) {
+						final Semaphore taskFinished = new Semaphore(1 - 2 * H);
+						
 						final Timestamp t = rs.getTimestamp("t");
 						String tweet = rs.getString("tweet");
 						
@@ -161,6 +169,29 @@ public class RTProcess {
 
 						////// for first order
 						for (int h = 0; h < H; h++) {
+							final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
+							final int f_h = h;
+							final double f_l = l;
+							
+							pool.execute(new Runnable(){
+
+								@Override
+								public void run() {
+									for (Map.Entry<Integer, Integer> entry : f_counter
+											.get(f_h).entrySet()) {
+										int bucket = entry.getKey();
+										int count = entry.getValue();
+										
+										double ds = count / f_l;
+										
+										currentSketch.firstOrderPulse(t, ds, f_h, bucket);								
+									}
+									
+									taskFinished.release();
+								}
+								
+							});
+							/*
 							for (Map.Entry<Integer, Integer> entry : counter
 									.get(h).entrySet()) {
 								int bucket = entry.getKey();
@@ -170,11 +201,49 @@ public class RTProcess {
 								
 								currentSketch.firstOrderPulse(t, ds, h, bucket);								
 							}
+							*/
 						}
 					
 						
 						////// for second order
 						for (int h = 0; h < H; h++) {
+							final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
+							final int f_h = h;
+							final double f_l = l;
+							
+							pool.execute(new Runnable(){
+
+								@Override
+								public void run() {
+									for (Map.Entry<Integer, Integer> entry_i : f_counter.get(f_h).entrySet()) {
+										int bucket_i = entry_i.getKey();
+										int count_i = entry_i.getValue();
+										
+										for(Map.Entry<Integer, Integer> entry_j : f_counter.get(f_h).entrySet()) {
+											int bucket_j = entry_j.getKey();
+											int count_j = entry_j.getValue();
+											
+											double ds = 0;
+											
+											if(bucket_i == bucket_j){
+												ds = count_i*(count_i-1);		
+											}else{
+												ds = count_i*count_j;
+											}
+											ds /= f_l*(f_l-1);
+											
+											currentSketch.secondOrderPulse(t, ds, f_h, bucket_i, bucket_j);
+											
+										}
+										
+									}
+									
+									taskFinished.release();
+								}
+								
+							});
+							
+							/*
 							for (Map.Entry<Integer, Integer> entry_i : counter.get(h).entrySet()) {
 								int bucket_i = entry_i.getKey();
 								int count_i = entry_i.getValue();
@@ -195,9 +264,16 @@ public class RTProcess {
 								}
 								
 							}
+							*/
 						}	
 						
-											
+						/////////// synchronize
+						try {
+							taskFinished.acquire();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+						
 						////////////////// change observing time //////////////
 						currentSketch.observe(t);
 						
