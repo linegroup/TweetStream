@@ -49,6 +49,34 @@ public class RTProcess {
 	}
 		
 	
+	private static void resetConnection(){
+		try {
+			conn.close();
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+			conn = null;
+
+		}
+		try {
+			conn = DriverManager
+					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
+							+ "user=root&password=123583");
+
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+			conn = null;
+
+		}
+	}
+	
 	private int LAG = 5; // Largest lag :  5 minutes
 	private int CYCLE = 1*60;
 	private int MAX_QUEUE_SIZE = CYCLE + LAG; // unit: minute (one day)
@@ -79,7 +107,6 @@ public class RTProcess {
 			Statement stmt = null;
 			ResultSet rs = null;
 			try {
-				
 				stmt = conn.createStatement();
 				String sqlTxt = "select *  from idstream where t >= \'" + start + "\' and t < \'" + next +"\'";
 				if (stmt.execute(sqlTxt)) {
@@ -238,6 +265,8 @@ public class RTProcess {
 			
 			start = next;
 			next = new Timestamp(start.getTime()+oneDayLong);
+			
+			resetConnection();
 		}
 	}
 	
