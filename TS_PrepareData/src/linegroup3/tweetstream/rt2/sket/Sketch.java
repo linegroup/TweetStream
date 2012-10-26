@@ -172,7 +172,13 @@ public class Sketch {
 
 	}
 	
-
+	public static void clearCheckpoints(Timestamp t){ // remove all the checkpoints before t
+		while(checkpoints.first().before(t)){
+			checkpoints.pollFirst();
+		}
+		/////// for debug
+		System.out.println("the size of checkpoints is " + checkpoints.size());
+	}
 	
 	
 }
