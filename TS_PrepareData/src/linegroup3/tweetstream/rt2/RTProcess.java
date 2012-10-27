@@ -120,7 +120,7 @@ public class RTProcess {
 					rs = stmt.getResultSet();
 					while (rs.next()) {
 						/// debug
-						long debug_T = System.currentTimeMillis();
+						///long debug_T = System.currentTimeMillis();
 						/////////////////////////////////
 						
 						final Semaphore taskFinished = new Semaphore(1 - 2 * H);
@@ -307,7 +307,7 @@ public class RTProcess {
 						}
 						
 						/// debug
-						System.out.println(System.currentTimeMillis() - debug_T);
+						///System.out.println(System.currentTimeMillis() - debug_T);
 						///////////
 						
 					}
