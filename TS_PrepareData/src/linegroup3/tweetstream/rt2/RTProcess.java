@@ -80,6 +80,11 @@ public class RTProcess {
 		}
 	}
 	
+	private static final Timestamp DETECT_T = Timestamp.valueOf("2011-09-04 23:59:59");
+	private static final double THRESHOLD_D_V = 1.0;
+	private static final double THRESHOLD_D_A = 2.0;
+	
+	
 	private static final int THREAD_POOL_SIZE = 2 * H;
 	private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);	
 	
@@ -100,11 +105,11 @@ public class RTProcess {
 	
 	private Sketch currentSketch = null;
 	
-	public void runTime(Timestamp start, Timestamp end){
+	public void runTime(Timestamp start, Timestamp end) throws IOException{
+		BufferedWriter speedLog = new BufferedWriter(new FileWriter("./data/speedLog.txt"));
 		
 		Timestamp next = new Timestamp(start.getTime()+oneDayLong);
-		
-		
+				
 		currentSketch = new Sketch();		
 
 		while(start.before(end)){
@@ -282,6 +287,35 @@ public class RTProcess {
 						currentSketch.observe(t);
 						
 						/////// for difference
+						{
+							Timestamp oneday_before_t = new Timestamp(t.getTime() - CYCLE * 60 * 1000);
+							
+							int index = head;
+							Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
+							while(sketch2.getTime().before(oneday_before_t)){
+								index ++;
+								sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
+							}
+							
+							Sketch sketch1 = sketchQueue[(index - 1) % MAX_QUEUE_SIZE];
+							
+							Estimator estimator;
+							try {
+								estimator = new Estimator(sketch1, sketch2, oneday_before_t);
+								
+								Pair pair = estimator.zeroOrderDiff(currentSketch);
+								
+								speedLog.write("" + t + "\t" + pair.v + "\t" + pair.a + "\n");
+								
+								if(t.after(DETECT_T) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
+									saveSketch(currentSketch);
+								}
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+							
+						}
+						
 						
 						/////// cache snapshot
 						final long oneMinute = 60 * 1000;
@@ -351,6 +385,8 @@ public class RTProcess {
 			
 			resetConnection();
 		}
+		
+		speedLog.close();
 	}
 	
 	private void clearSketchCheckpoints(){
