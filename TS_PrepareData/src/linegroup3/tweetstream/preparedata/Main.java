@@ -32,7 +32,7 @@ public class Main {
 		//Speed.showDSpeed(Timestamp.valueOf("2011-10-03 00:00:00"), Timestamp.valueOf("2011-10-06 23:00:00"));
 		
 		
-		new RTProcess().runTime(Timestamp.valueOf("2011-10-01 00:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
+		new RTProcess().runTime(Timestamp.valueOf("2011-09-01 00:00:00.0"), Timestamp.valueOf("2012-05-01 00:00:00.0"));
 		//new RTProcess().runTime(Timestamp.valueOf("2011-10-05 15:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		
 		//new ParallelInfer().infer();
