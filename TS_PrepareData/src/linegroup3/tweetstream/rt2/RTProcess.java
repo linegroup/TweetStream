@@ -116,7 +116,7 @@ public class RTProcess {
 		currentSketch = new Sketch();		
 
 		while(start.before(end)){
-			System.out.println("Processing : " + start);  // print info
+			System.out.println(new Timestamp(System.currentTimeMillis()) + "\tProcessing : " + start);  // print info
 			
 			Statement stmt = null;
 			ResultSet rs = null;
