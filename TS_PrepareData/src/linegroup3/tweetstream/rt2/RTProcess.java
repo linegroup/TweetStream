@@ -292,6 +292,10 @@ public class RTProcess {
 						////////////////// change observing time //////////////
 						currentSketch.observe(t);
 						
+						///////// write speed
+						Pair speed = currentSketch.zeroOrder.get(t);
+						speedLogWrite(t, speed.v, speed.a);
+						
 						/////// for difference
 						if(t.after(DETECT_T))
 						{
@@ -313,7 +317,7 @@ public class RTProcess {
 								
 								Pair pair = estimator.zeroOrderDiff(currentSketch);
 								
-								speedLogWrite(t, pair.v, pair.a);
+								dspeedLogWrite(t, pair.v, pair.a);
 								
 								if(t.after(one_min_after_lastTime) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
 									saveSketch(currentSketch);
@@ -574,6 +578,37 @@ public class RTProcess {
 	
 	private void speedLogWrite(Timestamp t, double v, double a) {
 		String sqlStr = "insert into speedlog (t, v, a) values(?, ?, ?) ";
+		PreparedStatement stmt = null;
+		try {
+			stmt = conn.prepareStatement(sqlStr);
+
+			stmt.setTimestamp(1, t);
+			stmt.setDouble(2, v);
+			stmt.setDouble(3, a);
+
+			stmt.execute();
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+		} finally {
+			// it is a good idea to release
+			// resources in a finally{} block
+			// in reverse-order of their creation
+			// if they are no-longer needed
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (SQLException sqlEx) {
+				} // ignore
+				stmt = null;
+			}
+		}
+	}
+	
+	private void dspeedLogWrite(Timestamp t, double v, double a) {
+		String sqlStr = "insert into dspeedlog (t, v, a) values(?, ?, ?) ";
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(sqlStr);
