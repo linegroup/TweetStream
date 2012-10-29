@@ -124,6 +124,7 @@ public class StopWords {
 						String term = rs.getString("term");
 						if(term.endsWith(word)){
 							stopIds.add(id);
+							System.out.println(word + "\t" + id);
 						}
 					}
 
