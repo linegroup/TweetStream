@@ -106,7 +106,9 @@ public class RTProcess {
 	
 	private Sketch currentSketch = null;
 	
-	public void runTime(Timestamp start, Timestamp end) throws IOException{		
+	public void runTime(Timestamp start, Timestamp end) throws IOException{	
+		Timestamp one_min_after_lastTime = new Timestamp(0);
+
 		Timestamp next = new Timestamp(start.getTime()+oneDayLong);
 				
 		currentSketch = new Sketch();		
@@ -286,8 +288,6 @@ public class RTProcess {
 						currentSketch.observe(t);
 						
 						/////// for difference
-						Timestamp lastTime = new Timestamp(0);
-						Timestamp one_min_after_lastTime = new Timestamp(lastTime.getTime() + 60000);
 						if(t.after(DETECT_T))
 						{
 							Timestamp oneday_before_t = new Timestamp(t.getTime() - CYCLE * 60 * 1000);
@@ -312,8 +312,7 @@ public class RTProcess {
 								
 								if(t.after(one_min_after_lastTime) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
 									saveSketch(currentSketch);
-									lastTime = t;
-									one_min_after_lastTime = new Timestamp(lastTime.getTime() + 60000);
+									one_min_after_lastTime = new Timestamp(t.getTime() + 60000);
 								}
 							} catch (Exception e) {
 								e.printStackTrace();
