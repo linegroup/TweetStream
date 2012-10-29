@@ -47,8 +47,6 @@ public class Estimator {
 	}
 	
 	public Pair zeroOrderDiff(Sketch sketch){
-		if(t.equals(t1)) return zeroOrder(sketch1);
-		if(t.equals(t2)) return zeroOrder(sketch2);
 		
 		Pair p = zeroOrder(sketch);
 		Pair p1 = zeroOrder(sketch1);
@@ -79,8 +77,6 @@ public class Estimator {
 	}
 	
 	public Pair[][] firstOrderDiff(Sketch sketch){
-		if(t.equals(t1)) return firstOrder(sketch1);
-		if(t.equals(t2)) return firstOrder(sketch2);
 
 		Pair[][] p = firstOrder(sketch);
 		Pair[][] p1 = firstOrder(sketch1);
@@ -122,8 +118,6 @@ public class Estimator {
 	}
 	
 	public Pair[][][] secondOrderDiff(Sketch sketch){
-		if(t.equals(t1)) return secondOrder(sketch1);
-		if(t.equals(t2)) return secondOrder(sketch2);
 		
 		Pair[][][] p = secondOrder(sketch);
 		Pair[][][] p1 = secondOrder(sketch1);
