@@ -12,6 +12,10 @@ public class StopWords {
 	public static boolean isStopWord(int id) {
 		return stopIds.contains(id);
 	}
+	
+	public static void initialize(){
+		stopIds.contains(0);
+	}
 
 	private static TreeSet<Integer> stopIds = new TreeSet<Integer>();
 
