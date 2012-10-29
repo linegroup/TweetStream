@@ -166,9 +166,10 @@ public class RTProcess {
 							}
 						}
 						
-						if(l <= 1){/////////////////////////////// for debug
-							System.out.print("L i s less than 2!!!!!!!");
-							System.out.println(rs.getString("status_ID"));
+						if(l <= 1){
+							/////////////////////////////// for debug
+							//System.out.print("L i s less than 2!!!!!!!");
+							//System.out.println(rs.getString("status_ID"));
 							continue;
 						}
 						
