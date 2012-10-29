@@ -41,7 +41,7 @@ public class ParallelInfer {
 	private Set<Integer> actives = new TreeSet<Integer>();
 	
 	public void infer(){
-		load("C:/Users/wei.xie.2012/Documents/GitHub/TweetStream/TS_PrepareData/data/sketch/2011_10_05_15_45_35_0", 'A');
+		load("D:/data/2011_09_04_00_49_25_0", 'V');
 		initial();
 		F();
 		for (int n = 0; n < 30; n++) {
@@ -90,9 +90,9 @@ public class ParallelInfer {
 				x[h][k][i] /= s;
 			}
 		}
-		w[0] = 0.6 * Lambda;
+		w[0] = 0.8 * Lambda;
 		for(int k = 1; k < K; k ++){
-			w[k] = 0.1 * Lambda;
+			w[k] = 0.05 * Lambda;
 		}
 		/*
 		for(int k = 0; k < K; k ++){
@@ -437,9 +437,9 @@ public class ParallelInfer {
 	
 	private void load(String dir, char c){
 		
-		String zeroOrder = "zeroOrder";
-		String firstOrder = "firstOrder";
-		String secondOrder = "secondOrder";
+		String zeroOrder = "diff_zeroOrder";
+		String firstOrder = "diff_firstOrder";
+		String secondOrder = "diff_secondOrder";
 		switch (c) {
 		case 'V': {
 			firstOrder += "V_";
