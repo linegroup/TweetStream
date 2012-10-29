@@ -51,6 +51,25 @@ public class RTProcess {
 
 		}
 	}
+	
+	static private Connection connForLog = null;
+	
+	static {
+		try {
+			connForLog = DriverManager
+					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
+							+ "user=root&password=123583");
+
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+			connForLog = null;
+
+		}
+	}
 		
 	
 	private static void resetConnection(){
@@ -293,8 +312,15 @@ public class RTProcess {
 						currentSketch.observe(t);
 						
 						///////// write speed
-						Pair speed = currentSketch.zeroOrder.get(t);
-						speedLogWrite(t, speed.v, speed.a);
+						final Pair speed = currentSketch.zeroOrder.get(t);
+						pool.execute(new Runnable(){
+
+							@Override
+							public void run() {
+								speedLogWrite(t, speed.v, speed.a);
+
+							}							
+						});
 						
 						/////// for difference
 						if(t.after(DETECT_T))
@@ -315,9 +341,15 @@ public class RTProcess {
 							try {
 								estimator = new Estimator(sketch1, sketch2, oneday_before_t);
 								
-								Pair pair = estimator.zeroOrderDiff(currentSketch);
+								final Pair pair = estimator.zeroOrderDiff(currentSketch);
 								
-								dspeedLogWrite(t, pair.v, pair.a);
+								pool.execute(new Runnable(){
+
+									@Override
+									public void run() {
+										dspeedLogWrite(t, pair.v, pair.a);
+									}									
+								});
 								
 								if(t.after(one_min_after_lastTime) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
 									saveSketch(currentSketch);
@@ -576,11 +608,11 @@ public class RTProcess {
 		
 	}
 	
-	private void speedLogWrite(Timestamp t, double v, double a) {
+	private synchronized void speedLogWrite(Timestamp t, double v, double a) {
 		String sqlStr = "insert into speedlog (t, v, a) values(?, ?, ?) ";
 		PreparedStatement stmt = null;
 		try {
-			stmt = conn.prepareStatement(sqlStr);
+			stmt = connForLog.prepareStatement(sqlStr);
 
 			stmt.setTimestamp(1, t);
 			stmt.setDouble(2, v);
@@ -607,11 +639,11 @@ public class RTProcess {
 		}
 	}
 	
-	private void dspeedLogWrite(Timestamp t, double v, double a) {
+	private synchronized void dspeedLogWrite(Timestamp t, double v, double a) {
 		String sqlStr = "insert into dspeedlog (t, v, a) values(?, ?, ?) ";
 		PreparedStatement stmt = null;
 		try {
-			stmt = conn.prepareStatement(sqlStr);
+			stmt = connForLog.prepareStatement(sqlStr);
 
 			stmt.setTimestamp(1, t);
 			stmt.setDouble(2, v);
