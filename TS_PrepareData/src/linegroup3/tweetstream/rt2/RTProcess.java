@@ -457,7 +457,7 @@ public class RTProcess {
 					
 			}
 			
-			trackFirstOrder(dir);
+			//trackFirstOrder(dir);
 			saveActiveTerms(dir);
 			
 		} catch (IOException e) {
