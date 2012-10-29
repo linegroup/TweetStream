@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -80,7 +81,7 @@ public class RTProcess {
 		}
 	}
 	
-	private static final Timestamp DETECT_T = Timestamp.valueOf("2011-09-04 23:59:59");
+	private static final Timestamp DETECT_T = Timestamp.valueOf("2011-09-03 23:59:59");
 	private static final double THRESHOLD_D_V = 1.0;
 	private static final double THRESHOLD_D_A = 2.0;
 	
@@ -105,9 +106,7 @@ public class RTProcess {
 	
 	private Sketch currentSketch = null;
 	
-	public void runTime(Timestamp start, Timestamp end) throws IOException{
-		BufferedWriter speedLog = new BufferedWriter(new FileWriter("./data/speedLog.txt"));
-		
+	public void runTime(Timestamp start, Timestamp end) throws IOException{		
 		Timestamp next = new Timestamp(start.getTime()+oneDayLong);
 				
 		currentSketch = new Sketch();		
@@ -287,8 +286,12 @@ public class RTProcess {
 						currentSketch.observe(t);
 						
 						/////// for difference
+						Timestamp lastTime = new Timestamp(0);
+						Timestamp one_min_after_lastTime = new Timestamp(lastTime.getTime() + 60000);
+						if(t.after(DETECT_T))
 						{
 							Timestamp oneday_before_t = new Timestamp(t.getTime() - CYCLE * 60 * 1000);
+					
 							
 							int index = head;
 							Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
@@ -305,10 +308,12 @@ public class RTProcess {
 								
 								Pair pair = estimator.zeroOrderDiff(currentSketch);
 								
-								speedLog.write("" + t + "\t" + pair.v + "\t" + pair.a + "\n");
+								speedLogWrite(t, pair.v, pair.a);
 								
-								if(t.after(DETECT_T) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
+								if(t.after(one_min_after_lastTime) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
 									saveSketch(currentSketch);
+									lastTime = t;
+									one_min_after_lastTime = new Timestamp(lastTime.getTime() + 60000);
 								}
 							} catch (Exception e) {
 								e.printStackTrace();
@@ -386,7 +391,6 @@ public class RTProcess {
 			resetConnection();
 		}
 		
-		speedLog.close();
 	}
 	
 	private void clearSketchCheckpoints(){
@@ -562,6 +566,37 @@ public class RTProcess {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	private void speedLogWrite(Timestamp t, double v, double a) {
+		String sqlStr = "insert into speedlog (t, v, a) values(?, ?, ?) ";
+		PreparedStatement stmt = null;
+		try {
+			stmt = conn.prepareStatement(sqlStr);
+
+			stmt.setTimestamp(1, t);
+			stmt.setDouble(2, v);
+			stmt.setDouble(3, a);
+
+			stmt.execute();
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+		} finally {
+			// it is a good idea to release
+			// resources in a finally{} block
+			// in reverse-order of their creation
+			// if they are no-longer needed
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (SQLException sqlEx) {
+				} // ignore
+				stmt = null;
+			}
+		}
 	}
 	
 }
