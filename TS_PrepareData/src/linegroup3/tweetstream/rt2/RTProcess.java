@@ -107,6 +107,8 @@ public class RTProcess {
 	private Sketch currentSketch = null;
 	
 	public void runTime(Timestamp start, Timestamp end) throws IOException{	
+		StopWords.initialize();
+		
 		Timestamp one_min_after_lastTime = new Timestamp(0);
 
 		Timestamp next = new Timestamp(start.getTime()+oneDayLong);
@@ -144,6 +146,8 @@ public class RTProcess {
 						for(String term : res){
 							if(term.length() >= 1){
 								int id = Integer.parseInt(term);
+								
+								if(StopWords.isStopWord(id))	continue;
 								
 								activeTerms.active(id, t);
 								
