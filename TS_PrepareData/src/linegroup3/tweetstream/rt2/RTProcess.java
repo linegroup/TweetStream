@@ -6,7 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -52,6 +51,7 @@ public class RTProcess {
 		}
 	}
 	
+	/*
 	static private Connection connForLog = null;
 	
 	static {
@@ -69,7 +69,9 @@ public class RTProcess {
 			connForLog = null;
 
 		}
-	}
+	}*/
+	static private BufferedWriter speedlog = null;
+	static private BufferedWriter dspeedlog = null;
 		
 	
 	private static void resetConnection(){
@@ -106,7 +108,7 @@ public class RTProcess {
 	
 	
 	private static final int THREAD_POOL_SIZE = 2 * H;
-	private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);	
+	private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 	
 	private int LAG = 5; // Largest lag :  5 minutes
 	private int CYCLE = 24*60;
@@ -127,6 +129,9 @@ public class RTProcess {
 	
 	public void runTime(Timestamp start, Timestamp end) throws IOException{	
 		StopWords.initialize();
+		
+		speedlog = new BufferedWriter(new FileWriter("./data/speedlog.txt"));
+		dspeedlog = new BufferedWriter(new FileWriter("./data/dspeedlog.txt"));
 		
 		Timestamp one_min_after_lastTime = new Timestamp(0);
 
@@ -313,14 +318,8 @@ public class RTProcess {
 						
 						///////// write speed
 						final Pair speed = currentSketch.zeroOrder.get(t);
-						pool.execute(new Runnable(){
+						speedLogWrite(t, speed.v, speed.a);
 
-							@Override
-							public void run() {
-								speedLogWrite(t, speed.v, speed.a);
-
-							}							
-						});
 						
 						/////// for difference
 						if(t.after(DETECT_T))
@@ -342,14 +341,7 @@ public class RTProcess {
 								estimator = new Estimator(sketch1, sketch2, oneday_before_t);
 								
 								final Pair pair = estimator.zeroOrderDiff(currentSketch);
-								
-								pool.execute(new Runnable(){
-
-									@Override
-									public void run() {
-										dspeedLogWrite(t, pair.v, pair.a);
-									}									
-								});
+								dspeedLogWrite(t, pair.v, pair.a);
 								
 								if(t.after(one_min_after_lastTime) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
 									saveSketch(currentSketch);
@@ -430,6 +422,9 @@ public class RTProcess {
 			
 			resetConnection();
 		}
+		
+		speedlog.close();
+		dspeedlog.close();
 		
 	}
 	
@@ -608,65 +603,19 @@ public class RTProcess {
 		
 	}
 	
-	private synchronized void speedLogWrite(Timestamp t, double v, double a) {
-		String sqlStr = "insert into speedlog (t, v, a) values(?, ?, ?) ";
-		PreparedStatement stmt = null;
+	private void speedLogWrite(Timestamp t, double v, double a) {
 		try {
-			stmt = connForLog.prepareStatement(sqlStr);
-
-			stmt.setTimestamp(1, t);
-			stmt.setDouble(2, v);
-			stmt.setDouble(3, a);
-
-			stmt.execute();
-		} catch (SQLException ex) {
-			// handle any errors
-			System.out.println("SQLException: " + ex.getMessage());
-			System.out.println("SQLState: " + ex.getSQLState());
-			System.out.println("VendorError: " + ex.getErrorCode());
-		} finally {
-			// it is a good idea to release
-			// resources in a finally{} block
-			// in reverse-order of their creation
-			// if they are no-longer needed
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (SQLException sqlEx) {
-				} // ignore
-				stmt = null;
-			}
+			speedlog.write(t + "\t" + v + "\t" + a + "\n");
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	private synchronized void dspeedLogWrite(Timestamp t, double v, double a) {
-		String sqlStr = "insert into dspeedlog (t, v, a) values(?, ?, ?) ";
-		PreparedStatement stmt = null;
+	private void dspeedLogWrite(Timestamp t, double v, double a) {
 		try {
-			stmt = connForLog.prepareStatement(sqlStr);
-
-			stmt.setTimestamp(1, t);
-			stmt.setDouble(2, v);
-			stmt.setDouble(3, a);
-
-			stmt.execute();
-		} catch (SQLException ex) {
-			// handle any errors
-			System.out.println("SQLException: " + ex.getMessage());
-			System.out.println("SQLState: " + ex.getSQLState());
-			System.out.println("VendorError: " + ex.getErrorCode());
-		} finally {
-			// it is a good idea to release
-			// resources in a finally{} block
-			// in reverse-order of their creation
-			// if they are no-longer needed
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (SQLException sqlEx) {
-				} // ignore
-				stmt = null;
-			}
+			dspeedlog.write(t + "\t" + v + "\t" + a + "\n");
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
