@@ -137,7 +137,9 @@ public class RTProcess {
 
 		Timestamp next = new Timestamp(start.getTime()+oneDayLong);
 				
-		currentSketch = new Sketch();		
+		currentSketch = new Sketch();	
+		
+		final Semaphore taskFinished = new Semaphore(0);
 
 		while(start.before(end)){
 			System.out.println(new Timestamp(System.currentTimeMillis()) + "\tProcessing : " + start);  // print info
@@ -154,9 +156,7 @@ public class RTProcess {
 						/// debug
 						///long debug_T = System.currentTimeMillis();
 						/////////////////////////////////
-						
-						final Semaphore taskFinished = new Semaphore(1 - 2 * H);
-						
+												
 						final Timestamp t = rs.getTimestamp("t");
 						String tweet = rs.getString("tweet");
 						
@@ -308,7 +308,7 @@ public class RTProcess {
 						
 						/////////// synchronize
 						try {
-							taskFinished.acquire();
+							taskFinished.acquire(2*H);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
