@@ -104,7 +104,7 @@ public class RTProcess {
 	
 	private static final Timestamp DETECT_T = Timestamp.valueOf("2011-09-03 23:59:59");
 	private static final double THRESHOLD_D_V = 1.0;
-	private static final double THRESHOLD_D_A = 2.0;
+	private static final double THRESHOLD_D_A = 10 * 2.0; // is the same as before 2.0
 	
 	
 	private static final int THREAD_POOL_SIZE = 2 * H;
