@@ -413,10 +413,7 @@ public class RTProcess {
 					stmt = null;
 				}
 			}
-			
-			
-			clearSketchCheckpoints();
-			
+						
 			start = next;
 			next = new Timestamp(start.getTime()+oneDayLong);
 			
@@ -428,10 +425,6 @@ public class RTProcess {
 		
 	}
 	
-	private void clearSketchCheckpoints(){
-		Sketch sketch = sketchQueue[head % MAX_QUEUE_SIZE];
-		Sketch.clearCheckpoints(sketch.getTime());
-	}
 	
 	private void checkFirstOrder(){
 		//Sketch sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];

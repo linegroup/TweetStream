@@ -1,13 +1,12 @@
 package linegroup3.tweetstream.rt2.sket;
 
 import java.sql.Timestamp;
-import java.util.TreeSet;
 
 
 public class Sketch {
 	/////// SET SMOOTH HERE !!!
-	static final long smooth_V = 15; // minute
-	static final long smooth_A = 5; // minute
+	static final long smooth_1 = 15; // minute
+	static final long smooth_2 = 5; // minute
 	static final long oneMinute = 60 * 1000; // (ms)
 	
 	/////// SET H & K HERE !!!
@@ -24,9 +23,7 @@ public class Sketch {
 	public Unit[][] firstOrder = null;
 	
 	public Unit[][][] secondOrder = null;
-	
-	static private TreeSet<Timestamp> checkpoints = new TreeSet<Timestamp>();
-	
+		
 	public Sketch(){
 		MainTstamp = t0;
 		
@@ -64,9 +61,7 @@ public class Sketch {
 	}
 	
 	public void observe(Timestamp time){
-		MainTstamp = time;
-		
-		checkpoints.add(time);
+		MainTstamp = time;		
 	}
 	
 	public Timestamp getTime(){
@@ -76,124 +71,91 @@ public class Sketch {
 	public void zeroOrderPulse(Timestamp currentTime, double ds){
 		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
-		double e_v = 1.0;
-		double e_a = 1.0;
+		double e_1 = 1.0;
+		double e_2 = 1.0;
 		
 		if(dt != 0){
-			e_v = Math.exp(-dt/(smooth_V*oneMinute));
-			e_a = Math.exp(-dt/(smooth_A*oneMinute));
+			e_1 = Math.exp(-dt/(smooth_1*oneMinute));
+			e_2 = Math.exp(-dt/(smooth_2*oneMinute));
 		}
 		
 		Pair pair = zeroOrder.get(MainTstamp);
 		
-		double newV = e_v*pair.v + ds / smooth_V;
-		double dv = newV - pair.v;
-		double newA = e_a*pair.a + dv / smooth_A;
+		double newV1 = e_1*pair.v + ds / smooth_1;
+		double newV2 = e_2*(pair.v + pair.a) + ds / smooth_2;
 		
-		zeroOrder = new Unit(currentTime, newV, newA);
+		zeroOrder = new Unit(currentTime, newV1, newV2);
 
 	}
 	
 	public void firstOrderPulse(Timestamp currentTime, double ds, int h, int i){
 		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
-		double e_v = 1.0;
-		double e_a = 1.0;
+		double e_1 = 1.0;
+		double e_2 = 1.0;
 		
 		if(dt != 0){
-			e_v = Math.exp(-dt/(smooth_V*oneMinute));
-			e_a = Math.exp(-dt/(smooth_A*oneMinute));
+			e_1 = Math.exp(-dt/(smooth_1*oneMinute));
+			e_2 = Math.exp(-dt/(smooth_2*oneMinute));
 		}
 		
 		Pair pair = firstOrder[h][i].get(MainTstamp);
 		
-		double newV = e_v*pair.v + ds / smooth_V;
-		double dv = newV - pair.v;
-		double newA = e_a*pair.a + dv / smooth_A;
+		double newV1 = e_1*pair.v + ds / smooth_1;
+		double newV2 = e_2*(pair.v + pair.a) + ds / smooth_2;
 		
-		firstOrder[h][i] = new Unit(currentTime, newV, newA);
+		firstOrder[h][i] = new Unit(currentTime, newV1, newV2);
 	}
 	
 	
 	public void secondOrderPulse(Timestamp currentTime, double ds, int h, int i, int j){
 		double dt = currentTime.getTime() - MainTstamp.getTime();
 		
-		double e_v = 1.0;
-		double e_a = 1.0;
+		double e_1 = 1.0;
+		double e_2 = 1.0;
 		
 		if(dt != 0){
-			e_v = Math.exp(-dt/(smooth_V*oneMinute));
-			e_a = Math.exp(-dt/(smooth_A*oneMinute));
+			e_1 = Math.exp(-dt/(smooth_1*oneMinute));
+			e_2 = Math.exp(-dt/(smooth_2*oneMinute));
 		}
 		
 		Pair pair = secondOrder[h][i][j].get(MainTstamp);
 		
-		double newV = e_v*pair.v + ds / smooth_V;
-		double dv = newV - pair.v;
-		double newA = e_a*pair.a + dv / smooth_A;
+		double newV1 = e_1*pair.v + ds / smooth_1;
+		double newV2 = e_2*(pair.v + pair.a) + ds / smooth_2;
 		
-		secondOrder[h][i][j] = new Unit(currentTime, newV, newA);
+		secondOrder[h][i][j] = new Unit(currentTime, newV1, newV2);
 	}
 	
 	
 	public class Unit{
 		private Timestamp Tstamp = null;
-		private double v = 0;
-		private double a = 0;
+		private double v1 = 0;
+		private double v2 = 0;
 		
-		public Unit(Timestamp t, double v, double a){
+		private Unit(Timestamp t, double v1, double v2){
 			this.Tstamp = t;
-			this.v = v;
-			this.a = a;
+			this.v1 = v1;
+			this.v1 = v2;
 		}
 		
 		public Pair get(Timestamp time){			
 			double dt = time.getTime() - Tstamp.getTime();
 			
-			if(dt == 0)	return new Pair(v, a);
+			if(dt == 0)	return new Pair(v1, v2 - v1);
 			
-			double e_v = Math.exp(-dt/(smooth_V*oneMinute));
-			double e_a = Math.exp(-dt/(smooth_A*oneMinute));
+			double e_1 = Math.exp(-dt/(smooth_1*oneMinute));
+			double e_2 = Math.exp(-dt/(smooth_2*oneMinute));
 			
-			double currentV = v*e_v;
+			double currentV1 = v1*e_1;
+			double currentV2 = v2*e_2;
+
 			
-			/////////////////////////////////
-			Timestamp initialPiont = Tstamp;
-			double initialA = a;
-			double initialV = v;
-			for(Timestamp timepoint :Sketch.checkpoints.subSet(Tstamp, time)){
-				if(timepoint.after(Tstamp)){
-					dt = timepoint.getTime() - initialPiont.getTime();
-					
-					e_v = Math.exp(-dt/(smooth_V*oneMinute));
-					e_a = Math.exp(-dt/(smooth_A*oneMinute));
-					
-					double tempV = initialV*e_v;
-					double tempA = initialA*e_a + (tempV - initialV) / smooth_A ;
-					
-					initialV = tempV;
-					initialA = tempA;
-					initialPiont = timepoint;
-				}
-			}
-			
-			dt = time.getTime() - initialPiont.getTime();
-			e_a = Math.exp(-dt/(smooth_A*oneMinute));
-			double dv = currentV - initialV;
-			double currentA = initialA*e_a + dv / smooth_A;
-			
-			return new Pair(currentV, currentA);
+			return new Pair(currentV1, currentV2 - currentV1);
 		}	
 
 	}
 	
-	public static void clearCheckpoints(Timestamp t){ // remove all the checkpoints before t
-		while(checkpoints.first().before(t)){
-			checkpoints.pollFirst();
-		}
-		/////// for debug
-		System.out.println("the size of checkpoints is " + checkpoints.size());
-	}
 	
 	
 }
