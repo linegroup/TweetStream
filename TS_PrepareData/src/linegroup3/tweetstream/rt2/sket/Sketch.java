@@ -136,7 +136,7 @@ public class Sketch {
 		private Unit(Timestamp t, double v1, double v2){
 			this.Tstamp = t;
 			this.v1 = v1;
-			this.v1 = v2;
+			this.v2 = v2;
 		}
 		
 		public Pair get(Timestamp time){			
