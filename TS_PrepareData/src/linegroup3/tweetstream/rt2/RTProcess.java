@@ -442,8 +442,8 @@ public class RTProcess {
 					C_V += pair1.v;
 					C_A += pair1.a;
 				}
-				if(Math.abs(C_V - pair0.v) > 1e-10) System.out.println("V Error!" + h + " " + (C_V - pair0.v) + " " + pair0.v);
-				if(Math.abs(C_A - pair0.a) > 1e-10) System.out.println("A Error!" + h + " " + (C_A - pair0.a) + " " + pair0.a);
+				if(Math.abs(C_V - pair0.v) > 1e-9) System.out.println("V Error!" + h + " " + (C_V - pair0.v) + " " + pair0.v);
+				if(Math.abs(C_A - pair0.a) > 1e-9) System.out.println("A Error!" + h + " " + (C_A - pair0.a) + " " + pair0.a);
 			}	
 		}
 		
