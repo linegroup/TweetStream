@@ -88,20 +88,26 @@ public class BuildInput {
 							sb.delete(sb.length() - 2, sb.length());
 							sb.append(":");
 							
+							LinkedList<String> list = new LinkedList<String>();
 							String[] res = tweet.split(",");
 							for (String word : res) {
 								if (word.length() >= 1) {
 									if (!StopWords.isStopWord(Integer
 											.parseInt(word))) {
-										sb.append(word + " ");
+										list.add(word);
 									}
 								}
 							}
+							
+							if(list.size() >= 3){
+								for(String word : list){
+									sb.append(word + " ");
+								}
+								sb.delete(sb.length() - 1, sb.length());
+								String str = sb.toString();
+								bw.add(str);
+							}
 
-							sb.delete(sb.length() - 1, sb.length());
-
-							String str = sb.toString();
-							bw.add(str);
 
 						}
 					}
@@ -140,6 +146,8 @@ public class BuildInput {
 			for(Map.Entry<Long, LinkedList<String>> entry : fileMap.entrySet()){
 				long user_ID = entry.getKey();
 				LinkedList<String> bw = entry.getValue();
+				
+				if(bw.size() == 0) continue;
 				
 				users.add(user_ID);
 				
