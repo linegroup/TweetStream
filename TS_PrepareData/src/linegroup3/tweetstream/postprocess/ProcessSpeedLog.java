@@ -36,6 +36,50 @@ public class ProcessSpeedLog {
 		writer.close();
 	}
 	
+	public static void printD(String dir) throws Exception {
+		BufferedReader reader = new BufferedReader(new FileReader(dir + "/dspeedlog.txt"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(dir + "/printDspeedlog.txt"));
+		String line = null;
+		final int COUNT = 1000;
+		int cnt = 0;
+		while((line = reader.readLine()) != null && cnt < COUNT){
+			writer.write(line);
+			writer.write("\n");
+			
+			cnt ++;
+		}
+		writer.close();
+		reader.close();	
+	}
+	
+	public static void processD(String dir) throws Exception {
+		Timestamp t0 = new Timestamp(0);
+		String line0 = null;
+		BufferedReader reader = new BufferedReader(new FileReader(dir + "/dspeedlog.txt"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(dir + "/processedDspeedlog.txt"));
+		String line = null;
+		//final int COUNT = 1000;
+		//int cnt = 0;
+		while((line = reader.readLine()) != null /*&& cnt < COUNT*/){
+			String[] res = line.split("\t");
+			Timestamp t = Timestamp.valueOf(res[0]);
+			if(!t0.equals(t)){
+				if(line0 != null){
+					writer.write(line0);
+					writer.write("\n");
+				}
+			}
+			t0 = t;
+			line0 = line;
+			
+			//cnt ++;
+		}
+		writer.write(line0);
+		writer.write("\n");
+		writer.close();
+		reader.close();		
+	}
+	
 	public static void process2(String dir) throws Exception {
 		TreeMap<Timestamp, Pair> map = new TreeMap<Timestamp, Pair>();
 		
