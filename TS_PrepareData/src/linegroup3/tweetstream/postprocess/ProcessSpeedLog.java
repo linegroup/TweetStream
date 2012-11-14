@@ -106,5 +106,30 @@ public class ProcessSpeedLog {
 		}
 		writer.close();
 	}
+	
+	public static void trimD(String dir) throws Exception{
+		Timestamp st = Timestamp.valueOf("2011-10-05 12:00:00"); // excluded
+		Timestamp et = Timestamp.valueOf("2011-10-06 00:00:00"); // included
+		
+		BufferedReader reader = new BufferedReader(new FileReader(dir + "/processedDspeedlog.txt"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(dir + "/trimD.txt"));
+		String line = null;
+		while((line = reader.readLine()) != null){
+			String[] res = line.split("\t");
+			Timestamp t = Timestamp.valueOf(res[0]);
+			
+			if(t.after(et))
+				break;
+			
+			if(t.after(st)){
+				writer.write(line);
+				writer.write("\n");
+			}
+			
+
+		}
+		writer.close();
+		reader.close();
+	}
 		
 }
