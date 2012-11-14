@@ -6,7 +6,7 @@ import java.sql.Timestamp;
 
 import linegroup3.tweetstream.rt2.sket.Pair;
 
-public class sigmaTest {
+public class SigmaTest {
 		
 	public static void test(String dir) throws Exception {
 		int n = 0;
