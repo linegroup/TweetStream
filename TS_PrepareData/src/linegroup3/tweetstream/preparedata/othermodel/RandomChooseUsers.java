@@ -7,7 +7,7 @@ import java.io.FileWriter;
 import java.util.Random;
 
 public class RandomChooseUsers {
-	final static double R = 0.4;
+	final static double R = 0.1;
 	final static Random rand = new Random();
 
 	public static void choose() {
