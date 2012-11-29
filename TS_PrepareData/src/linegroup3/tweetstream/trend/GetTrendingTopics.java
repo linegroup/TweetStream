@@ -40,7 +40,7 @@ public class GetTrendingTopics {
 	}
 	
 	static public void run(){
-		long t = Timestamp.valueOf("2012-11-28 12:00:00").getTime();
+		long t = Timestamp.valueOf("2012-11-28 16:35:00").getTime();
 		long oneHour = 5*60*1000 - 21; // 5 min
 		Date date = new Date(t); 
 		
@@ -135,7 +135,7 @@ public class GetTrendingTopics {
 	}
 	
 	private static void save(Trends trends) {
-		String sqlStr = "insert into roughTrend (t, asof, trendat, location, trends) values(?, ?, ?, ?, ?) ";
+		String sqlStr = "insert into roughTrend2 (t, asof, trendat, location, trends) values(?, ?, ?, ?, ?) ";
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(sqlStr);
