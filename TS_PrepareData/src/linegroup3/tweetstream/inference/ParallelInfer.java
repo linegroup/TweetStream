@@ -27,8 +27,8 @@ public class ParallelInfer {
 	private double[][][] x = null; // guess for topics H*K*N
 	private double[] w = null; // guess for lambda, w means weight
 
-	private int MAX_SEARCH_STEP = 1000;
-	private double M = 1e-3;
+	private int MAX_SEARCH_STEP = 300;
+	private double M = 1e-1;
 	
 
 	private final int N = 200;
@@ -41,7 +41,7 @@ public class ParallelInfer {
 	private Set<Integer> actives = new TreeSet<Integer>();
 	
 	public void infer(){
-		load("D:/data/2011_09_04_00_49_25_0", 'V');
+		load("D:/data_for_release2/data/sketch/2011_11_29_04_54_51_0", 'V');
 		initial();
 		F();
 		for (int n = 0; n < 30; n++) {
