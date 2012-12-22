@@ -174,7 +174,9 @@ public class WordsStastics {
 			
 		}
 		
-		System.out.println(words.size());
+		System.out.println("size of words : " + words.size());
+		
+		resetConnection();
 		
 		for(Map.Entry<Integer, Integer> entry : len1Counter.entrySet()){
 			saveLen1(entry.getKey(), entry.getValue());
@@ -244,6 +246,34 @@ public class WordsStastics {
 				} // ignore
 				stmt = null;
 			}
+		}
+	}
+	
+	private static void resetConnection(){
+		try {
+			conn.close();
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+			conn = null;
+
+		}
+		try {
+			conn = DriverManager
+					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
+							+ "user=root&password=123583");
+
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+			conn = null;
+
 		}
 	}
 	
