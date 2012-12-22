@@ -22,6 +22,7 @@ import cmu.arktweetnlp.Twokenize;
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.ActiveTerm;
 import linegroup3.tweetstream.rt2.StopWords;
+import linegroup3.tweetstream.rt2.sket.Pair;
 import linegroup3.tweetstream.rt2.sket.Sketch;
 
 public class SketchEfficiencyTest {
@@ -50,16 +51,19 @@ public class SketchEfficiencyTest {
 		}
 	}
 	
-	private static final int THREAD_POOL_SIZE = 1;
+	private static final int THREAD_POOL_SIZE = 5 ;
 	private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 	
 	private Sketch currentSketch = null;
 	
 	private ActiveTerm activeTerms = new ActiveTerm();
 	
+	private ArrayList<TreeMap<Integer, Integer>> g_counter;
+	private double g_l;
+	private Timestamp g_t;
+	
 	public void runTime(Timestamp start, Timestamp end) throws IOException{	
 		long totalNumOfTweets = 0;
-		long totalTime = 0;
 		long sketchTime = 0;
 		
 		StopWords.initialize();
@@ -69,6 +73,14 @@ public class SketchEfficiencyTest {
 		currentSketch = new Sketch();	
 		
 		final Semaphore taskFinished = new Semaphore(0);
+		final Semaphore taskStarted = new Semaphore(0);
+		
+		
+		
+		
+		LinkedList<ArrayList<TreeMap<Integer, Integer>>> counter_list = new LinkedList<ArrayList<TreeMap<Integer, Integer>>>();
+		LinkedList<Double> l_list = new LinkedList<Double>();
+		LinkedList<Timestamp> t_list = new LinkedList<Timestamp>();
 		
 		while(start.before(end)){
 			System.out.println(new Timestamp(System.currentTimeMillis()) + "\tProcessing : " + start);  // print info
@@ -77,7 +89,7 @@ public class SketchEfficiencyTest {
 			ResultSet rs = null;
 			try {
 				stmt = conn.createStatement();
-				String sqlTxt = "select *  from idstream where t >= \'" + start + "\' and t < \'" + next +"\'";
+				String sqlTxt = "select *  from stream where t >= \'" + start + "\' and t < \'" + next +"\'";
 				if (stmt.execute(sqlTxt)) {
 					
 					rs = stmt.getResultSet();
@@ -113,7 +125,7 @@ public class SketchEfficiencyTest {
 						
 						for(String term : finalTerms){
 							if(term.length() >= 1){
-								int id = term.hashCode();
+								int id = Math.abs(term.hashCode());
 															
 								for(int h = 0; h < H; h ++){
 									int bucket = HashFamily.hash(h, id);
@@ -138,133 +150,114 @@ public class SketchEfficiencyTest {
 						}
 						
 						////////////////////////////////////////////////
-						long sketch_t = System.currentTimeMillis();
-						
-						double ds = 0;
-						////// for zero order
-						
-						ds = 1;
-						currentSketch.zeroOrderPulse(t, ds);
-
-
-						////// for first order
-						for (int h = 0; h < H; h++) {
-							final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
-							final int f_h = h;
-							final double f_l = l;
-							
-							pool.execute(new Runnable(){
-
-								@Override
-								public void run() {
-									for (Map.Entry<Integer, Integer> entry : f_counter
-											.get(f_h).entrySet()) {
-										int bucket = entry.getKey();
-										int count = entry.getValue();
-										
-										double ds = count / f_l;
-										
-										currentSketch.firstOrderPulse(t, ds, f_h, bucket);								
-									}
-									
-									taskFinished.release();
-								}
-								
-							});
-							/*
-							for (Map.Entry<Integer, Integer> entry : counter
-									.get(h).entrySet()) {
-								int bucket = entry.getKey();
-								int count = entry.getValue();
-
-								ds = count / l;
-								
-								currentSketch.firstOrderPulse(t, ds, h, bucket);								
-							}
-							*/
-						}
-					
-						
-						////// for second order
-						for (int h = 0; h < H; h++) {
-							final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
-							final int f_h = h;
-							final double f_l = l;
-							
-							pool.execute(new Runnable(){
-
-								@Override
-								public void run() {
-									for (Map.Entry<Integer, Integer> entry_i : f_counter.get(f_h).entrySet()) {
-										int bucket_i = entry_i.getKey();
-										int count_i = entry_i.getValue();
-										
-										for(Map.Entry<Integer, Integer> entry_j : f_counter.get(f_h).entrySet()) {
-											int bucket_j = entry_j.getKey();
-											int count_j = entry_j.getValue();
-											
-											double ds = 0;
-											
-											if(bucket_i == bucket_j){
-												ds = count_i*(count_i-1);		
-											}else{
-												ds = count_i*count_j;
-											}
-											ds /= f_l*(f_l-1);
-											
-											currentSketch.secondOrderPulse(t, ds, f_h, bucket_i, bucket_j);
-											
-										}
-										
-									}
-									
-									taskFinished.release();
-								}
-								
-							});
-							
-							/*
-							for (Map.Entry<Integer, Integer> entry_i : counter.get(h).entrySet()) {
-								int bucket_i = entry_i.getKey();
-								int count_i = entry_i.getValue();
-								
-								for(Map.Entry<Integer, Integer> entry_j : counter.get(h).entrySet()) {
-									int bucket_j = entry_j.getKey();
-									int count_j = entry_j.getValue();
-																		
-									if(bucket_i == bucket_j){
-										ds = count_i*(count_i-1);		
-									}else{
-										ds = count_i*count_j;
-									}
-									ds /= l*(l-1);
-									
-									currentSketch.secondOrderPulse(t,ds, h, bucket_i, bucket_j);
-									
-								}
-								
-							}
-							*/
-						}	
-						
-						/////////// synchronize
-						try {
-							taskFinished.acquire(2*H);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						
-						////////////////// change observing time //////////////
-						currentSketch.observe(t);
-						
-					
-						
-						
-						
-						sketchTime += (System.currentTimeMillis() - sketch_t);
-						totalTime += (System.currentTimeMillis() - ct);
+						counter_list.add(counter);
+						l_list.add(l);
+						t_list.add(t);
 						
 					}
+					
+					//////////////////////////////////
+					System.out.println("start processing sketch...");
+					
+					long ct = System.currentTimeMillis();
+					
+
+					
+					while(!t_list.isEmpty()){
+						
+					g_t = t_list.pollFirst();
+					g_l = l_list.pollFirst();
+					g_counter = counter_list.pollFirst();
+					
+					lock();
+					
+					
+					for (int h = 0; h < H; h++) {
+						final int f_h = h;
+						
+						pool.execute(new Runnable(){
+
+							@Override
+							public void run() {
+								//while(true){
+								try {
+									taskStarted.acquire();
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}
+								
+								double f_l = g_l;
+								Timestamp t = g_t;
+								ArrayList<TreeMap<Integer, Integer>> f_counter = g_counter;
+
+								
+								for (Map.Entry<Integer, Integer> entry : f_counter
+										.get(f_h).entrySet()) {
+									int bucket = entry.getKey();
+									int count = entry.getValue();
+									
+									double ds = count / f_l;
+									
+									currentSketch.firstOrderPulse(t, ds, f_h, bucket);								
+								}
+								
+								
+								for (Map.Entry<Integer, Integer> entry_i : f_counter.get(f_h).entrySet()) {
+									int bucket_i = entry_i.getKey();
+									int count_i = entry_i.getValue();
+									
+									for(Map.Entry<Integer, Integer> entry_j : f_counter.get(f_h).entrySet()) {
+										int bucket_j = entry_j.getKey();
+										int count_j = entry_j.getValue();
+										
+										double ds = 0;
+										
+										if(bucket_i == bucket_j){
+											ds = count_i*(count_i-1);		
+										}else{
+											ds = count_i*count_j;
+										}
+										ds /= f_l*(f_l-1);
+										
+										currentSketch.secondOrderPulse(t, ds, f_h, bucket_i, bucket_j);
+										
+									}
+									
+								}
+								
+								taskFinished.release();
+								//}
+							}
+							
+						});
+					}
+					
+					taskStarted.release(H);
+					
+					
+					double ds = 0;
+					////// for zero order
+					Timestamp t = g_t;
+					ds = 1;
+					currentSketch.zeroOrderPulse(t, ds);
+					
+					try {
+						taskFinished.acquire(H);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					
+					////////////////// change observing time //////////////
+					currentSketch.observe(t);
+					unlock();
+					
+					
+					}
+					
+					ct = System.currentTimeMillis() - ct;
+					sketchTime += ct;
+					
+					checkFirstOrder();/////// for debugging
 	
 				}
 				
@@ -303,7 +296,6 @@ public class SketchEfficiencyTest {
 		}
 		
 		System.out.println("total number of tweets is " + totalNumOfTweets);
-		System.out.println("total time is " + totalTime);
 		System.out.println("total time for sketch is " + sketchTime);
 		
 	}
@@ -334,4 +326,39 @@ public class SketchEfficiencyTest {
 		return terms;
 
 	}
+	
+
+	
+	private void lock(){}
+	
+	private void unlock(){
+		
+	}
+	
+	
+	private void checkFirstOrder(){
+		//Sketch sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
+		Sketch sketch = currentSketch;
+		Timestamp currentTime = sketch.getTime();
+		System.out.println("Checking..." + currentTime);
+		
+		{
+			Pair pair0 = sketch.zeroOrder.get(currentTime);
+			for(int h = 0; h < H; h ++){
+				double C_V = 0;
+				double C_A = 0;
+				for(int i = 0; i < N; i ++){
+					Pair pair1 = sketch.firstOrder[h][i].get(currentTime);
+					C_V += pair1.v;
+					C_A += pair1.a;
+				}
+				if(Math.abs(C_V - pair0.v) > 1e-9) System.out.println("V Error!" + h + " " + (C_V - pair0.v) + " " + pair0.v);
+				if(Math.abs(C_A - pair0.a) > 1e-9) System.out.println("A Error!" + h + " " + (C_A - pair0.a) + " " + pair0.a);
+			}	
+		}
+		
+
+	}
+	
+	
 }
