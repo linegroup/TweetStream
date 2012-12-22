@@ -13,11 +13,16 @@ public class StopWords {
 		return stopIds.contains(id);
 	}
 	
+	public static boolean isStopWord(String word){
+		return stopWds.contains(word);
+	}
+	
 	public static void initialize(){
 		stopIds.contains(0);
 	}
 
 	private static TreeSet<Integer> stopIds = new TreeSet<Integer>();
+	private static TreeSet<String> stopWds = new TreeSet<String>();
 
 	private static String[] stopwords = { "a", "about", "above", "across",
 			"after", "again", "against", "all", "almost", "alone", "along",
@@ -110,6 +115,11 @@ public class StopWords {
 
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
+		
+		for (String word : stopwords){
+			stopWds.add(word);
+		}
+		
 		for (String word : stopwords)
 			try {
 				String sqlStr = "select * from termid where term = ?";
