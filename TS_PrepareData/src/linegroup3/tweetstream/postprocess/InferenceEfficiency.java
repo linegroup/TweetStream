@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
 
@@ -36,7 +37,7 @@ public class InferenceEfficiency {
 	private final int H = 5;
 	
 	private final ExecutorService pool = Executors.newFixedThreadPool(H);
-	private boolean[] states = new boolean[H]; 
+	final Semaphore taskFinished = new Semaphore(0);
 	
 	private Set<Integer> actives = new TreeSet<Integer>();
 	
@@ -47,22 +48,16 @@ public class InferenceEfficiency {
 		for (int n = 0; n < 30; n++) {
 
 			for (int h = 0; h < H; h++) {
-				setState(h, false);
 				pool.execute(new Handler(h));
 			}
 
-			while (!getState()) {
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+			try {
+				taskFinished.acquire(H);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 
 			searchLambda();
-			
-			for(int h = 0; h < H; h ++)
-				setState(h, false);
 			
 			F(); // debug
 		}
@@ -417,23 +412,11 @@ public class InferenceEfficiency {
 			for(int k = 0; k < K; k ++){
 				searchTopic(h, k);
 			}
-			setState(h, true);
+			taskFinished.release();
 		}
 	}
 	
-	synchronized private void setState(int h, boolean finished){
-		states[h] = finished;
-	}
-	
-	synchronized private boolean getState(){
-		
-		for(int h = 0; h < H; h ++){
-			if(states[h] == false)
-				return false;
-		}
-		return true;
-		
-	}
+
 	
 	private void load(String dir, char c){
 		
