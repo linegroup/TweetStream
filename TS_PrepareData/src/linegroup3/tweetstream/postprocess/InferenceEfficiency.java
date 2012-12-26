@@ -28,7 +28,7 @@ public class InferenceEfficiency {
 	private double[][][] x = null; // guess for topics H*K*N
 	private double[] w = null; // guess for lambda, w means weight
 
-	private int MAX_SEARCH_STEP = 300;
+	private int MAX_SEARCH_STEP = 100;
 	private double M = 1e-1;
 	
 
@@ -42,9 +42,11 @@ public class InferenceEfficiency {
 	private Set<Integer> actives = new TreeSet<Integer>();
 	
 	public void infer(){
-		load("D:/data_for_release2/data/sketch/2011_11_29_04_54_51_0", 'V');
+		load("D:/data_for_release2/data/sketch/2011_11_29_04_54_51_0", 'A');
 		initial();
 		F();
+		
+		long ct = System.currentTimeMillis();
 		for (int n = 0; n < 30; n++) {
 
 			for (int h = 0; h < H; h++) {
@@ -59,8 +61,11 @@ public class InferenceEfficiency {
 
 			searchLambda();
 			
-			F(); // debug
+			
 		}
+		System.out.println("time : " + (System.currentTimeMillis() - ct));
+		
+		F(); // debug
 		
 		System.out.println();
 		System.out.println("ANALYSING..........................");
@@ -213,7 +218,7 @@ public class InferenceEfficiency {
 
 		} while (norm0 > threshold);
 		
-		System.out.println("Lambda:" + iteration);
+		//System.out.println("Lambda:" + iteration);
 		return norm0;
 	}
 	
@@ -366,7 +371,7 @@ public class InferenceEfficiency {
 
 		} while (norm0 > threshold);
 		
-		System.out.println("Topic "+ h + " " + iteration);
+		//System.out.println("Topic "+ h + " " + iteration);
 		return norm0;
 	}
 	
