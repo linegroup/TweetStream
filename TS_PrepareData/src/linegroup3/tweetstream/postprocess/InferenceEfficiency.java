@@ -1,6 +1,7 @@
 package linegroup3.tweetstream.postprocess;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
@@ -20,6 +21,7 @@ import java.util.concurrent.Semaphore;
 import linegroup3.tweetstream.preparedata.HashFamily;
 
 public class InferenceEfficiency {
+	//private boolean debugFlag = false;
 
 	private double[][][] a = null;  // H*N*N
 	private double[][] e = null; // H*N
@@ -28,7 +30,7 @@ public class InferenceEfficiency {
 	private double[][][] x = null; // guess for topics H*K*N
 	private double[] w = null; // guess for lambda, w means weight
 
-	private int MAX_SEARCH_STEP = 100;
+	private int MAX_SEARCH_STEP = 50;
 	private double M = 1e-1;
 	
 
@@ -41,13 +43,37 @@ public class InferenceEfficiency {
 	
 	private Set<Integer> actives = new TreeSet<Integer>();
 	
+	private void warmup(){
+		//
+	}
+	
+	public void runtime(String dirpath){
+		warmup();
+		
+		for (MAX_SEARCH_STEP = 25; MAX_SEARCH_STEP <= 50; MAX_SEARCH_STEP += 25) {
+			System.out.println("MAX_SEARCH_STEP is : " + MAX_SEARCH_STEP);
+
+			File dir = new File(dirpath);
+			String[] sketchDirStrs = dir.list();
+			for (String sketchDirStr : sketchDirStrs) {				
+				
+				File sketchDir = new File(dirpath + sketchDirStr);
+				if (sketchDir.isDirectory()) {
+					infer(sketchDir.getAbsolutePath());
+				}
+			}
+		}
+	}
+	
 	public void infer(){
-		load("D:/data_for_release2/data/sketch/2011_11_29_04_54_51_0", 'A');
+		//debugFlag = true;
+		
+		load("D:/data_for_release2/data/sketch/2011_10_05_15_50_41_0", 'A');
 		initial();
 		F();
 		
 		long ct = System.currentTimeMillis();
-		for (int n = 0; n < 30; n++) {
+		for (int n = 0; n < MAX_SEARCH_STEP; n++) {
 
 			for (int h = 0; h < H; h++) {
 				pool.execute(new Handler(h));
@@ -61,7 +87,7 @@ public class InferenceEfficiency {
 
 			searchLambda();
 			
-			
+			F();
 		}
 		System.out.println("time : " + (System.currentTimeMillis() - ct));
 		
@@ -71,6 +97,51 @@ public class InferenceEfficiency {
 		System.out.println("ANALYSING..........................");
 		
 		analyse();
+	}
+	
+	public void infer(String path){	
+		Fscore fs0 = new Fscore();
+		Fscore fs1 = new Fscore();
+		
+		
+		load(path, 'A');
+		initial();		
+		
+	
+		F(fs0);
+				
+		long ct = System.currentTimeMillis();
+		for (int n = 0; n < MAX_SEARCH_STEP; n++) {
+
+			for (int h = 0; h < H; h++) {
+				pool.execute(new Handler(h));
+			}
+
+			try {
+				taskFinished.acquire(H);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			searchLambda();
+			
+			//F();
+		}
+		ct = (System.currentTimeMillis() - ct);
+		
+		F(fs1); 
+		
+		if((fs1.F/fs0.F) <= 1)
+		System.out.println(path + "\t" + ct + "\t" + fs0.F1 + "\t" + fs0.F4 + "\t" + fs0.F + "\t" + fs1.F1 + "\t" + fs1.F4 + "\t" + fs1.F +
+				"\t" + (fs1.F1/fs0.F1) + "\t" + (fs1.F4/fs0.F4) + "\t" + (fs1.F/fs0.F));
+		else{
+			System.out.println("error!");
+		}
+		
+		//System.out.println();
+		//System.out.println("ANALYSING..........................");
+		
+		//analyse();
 	}
 	
 	private void initial(){
@@ -87,17 +158,19 @@ public class InferenceEfficiency {
 				s += r;
 			}
 			for(int i = 0; i < N; i ++){
-				x[h][k][i] /= s;
+				//x[h][k][i] /= s;
+				x[h][k][i] = 1.0/ N;
 			}
 		}
+		/*
 		w[0] = 0.8 * Lambda;
 		for(int k = 1; k < K; k ++){
 			w[k] = 0.05 * Lambda;
-		}
-		/*
-		for(int k = 0; k < K; k ++){
-			w[k] = Lambda*2*(K-k)/(K*(K+1));
 		}*/
+		
+		for(int k = 0; k < K; k ++){
+			w[k] = Lambda / K;
+		}
 	}
 	
 	private double searchLambda() {// weight
@@ -302,9 +375,17 @@ public class InferenceEfficiency {
 					}
 					J += temp*dx[i];
 				}
+				
+				//if(debugFlag){
+				//	System.out.println("J:  " + J);
+				//}
 				/////////////////////////////////////////////
 
 				double step = dot(dx, d) / J;
+				
+				//if(debugFlag){
+				//	System.out.println("step:  " + step);
+				//}
 				
 				/*
 				double stepMin = -1e300;
@@ -367,11 +448,16 @@ public class InferenceEfficiency {
 				break;
 
 			iteration++;
+			
+			//if(debugFlag){
+			//	F();
+			//}
 						
 
 		} while (norm0 > threshold);
 		
 		//System.out.println("Topic "+ h + " " + iteration);
+		
 		return norm0;
 	}
 	
@@ -496,7 +582,13 @@ public class InferenceEfficiency {
 		
 	}
 	
-	private double F(){
+	private class Fscore{
+		public double F1 = 0;
+		public double F4 = 0;
+		public double F = 0;
+	}
+	
+	synchronized private double F(){
 		double ret = 0;
 		
 		double F1 = 0;
@@ -548,6 +640,62 @@ public class InferenceEfficiency {
 		
 		ret = F1 + M * F4;
 		System.out.println("F : " + ret);
+		return ret;
+	}
+	
+	private double F(Fscore fs){
+		double ret = 0;
+		
+		double F1 = 0;
+		for(int h = 0; h < H; h ++)
+		for(int i = 0; i < N; i ++){
+			for(int j = 0; j < N; j ++){
+				double temp = 0;
+				for(int k = 0; k < K; k ++){
+					temp += w[k]*x[h][k][i]*x[h][k][j];
+				}
+				temp -= a[h][i][j];
+				F1 += temp*temp;
+			}
+		}
+		
+		double F2 = 0;
+		for(int h = 0; h < H; h ++)
+		for(int k = 0; k < K; k ++){
+			double temp = 0;
+			for(int i = 0; i < N; i ++){
+				temp += x[h][k][i];
+			}
+			temp -= 1;
+			F2 += temp*temp;
+		}
+		
+		double F3 = 0;
+		for(int k = 0; k < K; k ++){
+			F3 += w[k];
+		}
+		F3 -= Lambda;
+		F3 = F3*F3;
+		
+		double F4 = 0;
+		for(int h = 0; h < H; h ++)
+		for(int i = 0; i < N; i ++){
+			double temp = 0;
+			for(int k = 0; k < K; k ++){
+				temp += w[k]*x[h][k][i];
+			}
+			temp -= e[h][i];
+			F4 += temp*temp;
+		}
+
+		
+		ret = F1 + M * F4;
+		
+		
+		fs.F1 = F1;
+		fs.F4 = F4;
+		fs.F = ret;
+		
 		return ret;
 	}
 	
