@@ -668,11 +668,13 @@ public class RTProcess2 {
 	}
 	
 	private List<String> tokenize(String tweet) {
+		List<String> ret = new LinkedList<String>();
+		
 		String str = tweet;
 		str = str.replaceAll("\\.{10,}+", " ");
 		List<String> terms = Twokenize.tokenize(str);
 
-		/*
+		
 		final String regex = "\\p{Punct}+";
 		for (String term : terms) {
 			if (term.length() > 0 && term.length() <= 64
@@ -680,9 +682,9 @@ public class RTProcess2 {
 				ret.add(term);
 			}
 		}
-		*/
+		
 
-		return terms;
+		return ret;
 
 	}
 	
