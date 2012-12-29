@@ -106,7 +106,7 @@ public class RTProcess2 {
 		}
 	}
 	
-	private static final Timestamp DETECT_T = Timestamp.valueOf("2011-09-03 23:59:59");
+	private Timestamp DETECT_T = null;
 	private static final double THRESHOLD_D_V = 1.0;
 	private static final double THRESHOLD_D_A = 10 * 2.0; // is the same as before 2.0
 	
@@ -131,7 +131,8 @@ public class RTProcess2 {
 	
 	private Sketch currentSketch = null;
 	
-	public void runTime(Timestamp start, Timestamp end) throws IOException{	
+	public void runTime(Timestamp start, Timestamp end, Timestamp dt) throws IOException{	
+		DETECT_T= dt;
 		StopWords.initialize();
 		
 		speedlog = new BufferedWriter(new FileWriter("./data/speedlog.txt"));
