@@ -47,7 +47,8 @@ public class HashFamily {
 		}break;
 		}
 		
-		if(ret < 0)	ret += 200;
+		ret = ret % Integer.MAX_VALUE;
+		
 		return (int)ret;
 	}
 	
