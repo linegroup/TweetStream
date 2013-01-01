@@ -223,10 +223,9 @@ public class RTProcess2 {
 						
 						for(String term : finalTerms){
 							if(term.length() >= 1){
-								int id = Math.abs(term.hashCode());
 															
 								for(int h = 0; h < H; h ++){
-									int bucket = HashFamily.hash(h, id);
+									int bucket = HashFamily.hash(h, term);
 									
 									Integer count = counter.get(h).get(bucket);
 									if(count == null){

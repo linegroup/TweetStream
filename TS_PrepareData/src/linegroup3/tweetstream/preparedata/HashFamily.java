@@ -24,26 +24,26 @@ public class HashFamily {
 	}
 	/* End Of BKDR Hash Function */
 	
-	/*
+	
 	private static GeneralHashFunctionLibrary hashBase = new GeneralHashFunctionLibrary();
 	
-	public static int hash(int fun, int i) { // return 0~199 fun 0~4
+	private static int hashCode(int fun, String str) { // return 0~199 fun 0~4
 		long ret = 0;
 		switch(fun){
 		case 0:{
-			ret = hashBase.BKDRHash("yg" + i) % 200;
+			ret = hashBase.BKDRHash(str);
 		}break;
 		case 1:{
-			ret = hashBase.APHash("ko" + i) % 200;
+			ret = hashBase.APHash(str);
 		}break;
 		case 2:{
-			ret = hashBase.DJBHash("eq" + i) % 200;
+			ret = hashBase.DJBHash(str);
 		}break;
 		case 3:{
-			ret = hashBase.JSHash("mx" + i) % 200;
+			ret = hashBase.JSHash(str);
 		}break;
 		case 4:{
-			ret = hashBase.RSHash("wa" + i) % 200;
+			ret = hashBase.RSHash(str);
 		}break;
 		}
 		
@@ -51,7 +51,7 @@ public class HashFamily {
 		return (int)ret;
 	}
 	
-	*/
+	
 	
 	
 	////// USING UNIVERSAL HASHING
@@ -80,6 +80,17 @@ public class HashFamily {
 		return (int)ret;
 		
 	}
+	
+	public static int hash(int fun, String str) { // return 0~199 fun 0~4
+		int i = Math.abs(hashCode(fun, str));
+		
+		//long ret = ((b[fun] + i*a[fun]) % P ) % 200 ;
+		long ret = (b[fun] + i*a[fun]);		
+		ret = (ret % P) % 200;
+		return (int)ret;
+		
+	}
+
 	
 	
 	
