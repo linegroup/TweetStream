@@ -153,7 +153,7 @@ public class RTProcess2 {
 			ResultSet rs = null;
 			try {
 				stmt = conn.createStatement();
-				String sqlTxt = "select *  from stream where t >= \'" + start + "\' and t < \'" + next +"\'";
+				String sqlTxt = "select *  from stream where t >= \'" + start + "\' and t < \'" + next +"\' order by t";
 				if (stmt.execute(sqlTxt)) {
 					
 					rs = stmt.getResultSet();
