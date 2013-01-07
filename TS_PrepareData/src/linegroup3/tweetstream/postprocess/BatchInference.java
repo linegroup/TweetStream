@@ -2,6 +2,7 @@ package linegroup3.tweetstream.postprocess;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Comparator;
@@ -28,7 +29,7 @@ public class BatchInference {
 	private double[] w = null; // guess for lambda, w means weight
 
 	private int MAX_SEARCH_STEP = 25;
-	private double M = 1e-3;
+	private double M = 1e-1;
 	
 
 	private final int N = 200;
@@ -59,7 +60,8 @@ public class BatchInference {
 		Fscore fs1 = new Fscore();
 		
 		
-		load(path, 'V');
+		loadV2(path);
+		//load(path, 'A');
 		initial();		
 		
 	
@@ -727,6 +729,93 @@ public class BatchInference {
 				actives.add(line);
 			}
 			in.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	private void loadV2(String dir){
+		Lambda = 0;
+		e = new double[H][N];
+		a = new double[H][N][N];
+		loadForV2(dir, 'A');
+		loadForV2(dir, 'V');
+		
+		////// for actives
+		actives.clear();
+		BufferedReader in;
+		try {
+			in = new BufferedReader(new FileReader(dir + "/" + "actives.txt"));
+			String line = null;
+			while ((line = in.readLine()) != null) {
+				actives.add(line);
+			}
+			in.close();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+	}
+	
+	private void loadForV2(String dir, char c){
+		
+		String zeroOrder = "diff_zeroOrder";
+		String firstOrder = "diff_firstOrder";
+		String secondOrder = "diff_secondOrder";
+		switch (c) {
+		case 'V': {
+			firstOrder += "V_";
+			secondOrder += "V_";
+		}
+			break;
+		case 'A': {
+			firstOrder += "A_";
+			secondOrder += "A_";
+		}
+			break;
+		}
+		
+		
+		try {
+			/////// zeroOrder
+			BufferedReader in = new BufferedReader(new FileReader(dir + "/" + zeroOrder + ".txt"));
+			String line = null;
+			while((line = in.readLine()) != null){
+				if(line.startsWith("" + c)){
+					String[] res = line.split("\t");
+					Lambda += Double.parseDouble(res[1]);
+				}
+			}
+			in.close();
+			
+			/////// firstOrder
+			for(int h = 0; h < H; h ++){
+				in = new BufferedReader(new FileReader(dir + "/" + firstOrder + h + ".txt"));
+				line = in.readLine();
+				String[] res = line.split("\t");
+				for(int i = 0; i < N; i ++){
+					e[h][i] += Double.parseDouble(res[i + 1]);
+				}
+				in.close();
+			}
+			
+			/////// secondOrder
+			for(int h = 0; h < H; h ++){
+				in = new BufferedReader(new FileReader(dir + "/" + secondOrder + h + ".txt"));
+				int j = 0;
+				while((line = in.readLine()) != null){
+					String[] res = line.split("\t");
+					for(int i = 0; i < N; i ++){
+						a[h][i][j] += Double.parseDouble(res[i + 1]);
+					}
+					j ++;
+				}
+				in.close();
+			}
 			
 		} catch (IOException e) {
 			e.printStackTrace();
