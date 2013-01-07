@@ -21,7 +21,6 @@ import linegroup3.tweetstream.preparedata.HashFamily;
 public class BatchInference {
 	
 	private double[][][] a = null;  // H*N*N
-	private double[][][] v = null;  // H*N*N;
 	private double[][] e = null; // H*N
 	private double Lambda = 0;
 
