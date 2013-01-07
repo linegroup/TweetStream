@@ -21,6 +21,7 @@ import linegroup3.tweetstream.preparedata.HashFamily;
 public class BatchInference {
 	
 	private double[][][] a = null;  // H*N*N
+	private double[][][] v = null;  // H*N*N;
 	private double[][] e = null; // H*N
 	private double Lambda = 0;
 
@@ -28,7 +29,7 @@ public class BatchInference {
 	private double[] w = null; // guess for lambda, w means weight
 
 	private int MAX_SEARCH_STEP = 25;
-	private double M = 1e-1;
+	private double M = 1e-3;
 	
 
 	private final int N = 200;
@@ -43,7 +44,9 @@ public class BatchInference {
 	public void batchInfer(String dirpath) throws Exception{
 		File dir = new File(dirpath);
 		String[] sketchDirStrs = dir.list();
-		for (String sketchDirStr : sketchDirStrs) {				
+		for (String sketchDirStr : sketchDirStrs) {	
+			
+			if(sketchDirStr.startsWith("."))	continue;
 			
 			File sketchDir = new File(dirpath + sketchDirStr);
 			if (sketchDir.isDirectory()) {
@@ -52,12 +55,12 @@ public class BatchInference {
 		}
 	}
 	
-	public void infer(String path){	
+	private void infer(String path){	
 		Fscore fs0 = new Fscore();
 		Fscore fs1 = new Fscore();
 		
 		
-		load(path, 'A');
+		load(path, 'V');
 		initial();		
 		
 	
@@ -85,17 +88,92 @@ public class BatchInference {
 		
 		F(fs1); 
 		
-		if((fs1.F/fs0.F) <= 1)
-		System.out.println(path + "\t" + ct + "\t" + fs0.F1 + "\t" + fs0.F4 + "\t" + fs0.F + "\t" + fs1.F1 + "\t" + fs1.F4 + "\t" + fs1.F +
-				"\t" + (fs1.F1/fs0.F1) + "\t" + (fs1.F4/fs0.F4) + "\t" + (fs1.F/fs0.F));
+		//if((fs1.F/fs0.F) <= 1)
+		if(!TopicFilter.filterByOptimization(fs1.F/fs0.F)){
+		//System.out.println(path + "\t" + ct + "\t" + fs0.F1 + "\t" + fs0.F4 + "\t" + fs0.F + "\t" + fs1.F1 + "\t" + fs1.F4 + "\t" + fs1.F +
+		//		"\t" + (fs1.F1/fs0.F1) + "\t" + (fs1.F4/fs0.F4) + "\t" + (fs1.F/fs0.F));
+			
+			String[] res = path.split("\\\\");
+			String str = res[res.length - 1];
+			
+			String[] res2 = str.split("_");
+			String dateStr = res2[0] + "-" + res2[1] + "-" + res2[2] + " " + res2[3] + ":" + res2[4] + ":" + res2[5];
+			
+			System.out.println(dateStr + "\t" + ct/1000.0 + "s\t" + (fs1.F/fs0.F));
+		
+			analyse();
+		}
 		else{
-			System.out.println("error!");
+			//System.out.println("error!");
 		}
 		
 		//System.out.println();
 		//System.out.println("ANALYSING..........................");
 		
-		analyse();
+		
+	}
+	
+	public void uniInfer(String path){	
+		Fscore fs0 = new Fscore();
+		Fscore fs1 = new Fscore();
+		
+		M = 1e-1;
+		
+		load(path, 'A');
+		initial();		
+		
+		////////////////////////////////////
+		for(int k = 0; k < K; k ++){
+			w[k] = Lambda / K;
+		}
+		//w[0] = 0.6; w[1] = 0.2; w[2] = 0.1; w[3] = 0.05; w[4] = 0.05;
+		////////////////////////////////////
+	
+		F(fs0);
+				
+		long ct = System.currentTimeMillis();
+		for (int n = 0; n < MAX_SEARCH_STEP; n++) {
+		//for (int n = 0; n < 1000; n++) {
+
+			for (int h = 0; h < H; h++) {
+				pool.execute(new Handler(h));
+			}
+
+			try {
+				taskFinished.acquire(H);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			searchLambda();
+			
+			//F();
+		}
+		ct = (System.currentTimeMillis() - ct);
+		
+		F(fs1); 
+		
+		//if((fs1.F/fs0.F) <= 1)
+
+		//System.out.println(path + "\t" + ct + "\t" + fs0.F1 + "\t" + fs0.F4 + "\t" + fs0.F + "\t" + fs1.F1 + "\t" + fs1.F4 + "\t" + fs1.F +
+		//		"\t" + (fs1.F1/fs0.F1) + "\t" + (fs1.F4/fs0.F4) + "\t" + (fs1.F/fs0.F));
+			
+			String[] res = path.split("/");
+			String str = res[res.length - 1];
+			
+			String[] res2 = str.split("_");
+			String dateStr = res2[0] + "-" + res2[1] + "-" + res2[2] + " " + res2[3] + ":" + res2[4] + ":" + res2[5];
+			
+			System.out.println(dateStr + "\t" + ct/1000.0 + "s\t" + (fs1.F/fs0.F));
+		
+			analyse();
+		
+
+		
+		//System.out.println();
+		//System.out.println("ANALYSING..........................");
+		
+		
 	}
 	
 
@@ -104,6 +182,11 @@ public class BatchInference {
 		final int TopN = 15;
 
 		for (int k = 0; k < K; k++) {
+			
+			if(TopicFilter.filterByW(w[k]/Lambda)){
+				continue;
+			}
+			
 			PriorityQueue<ValueTermPair> queue = new PriorityQueue<ValueTermPair>(
 					TopN, new Comparator<ValueTermPair>() {
 
@@ -127,7 +210,7 @@ public class BatchInference {
 						min = v;
 				}
 				
-				if(min < 0.01) continue;
+				if(min < TopicFilter.minProb) continue;
 				
 				if (queue.size() < TopN) {
 					queue.offer(new ValueTermPair(min, term));
@@ -138,6 +221,10 @@ public class BatchInference {
 						queue.offer(new ValueTermPair(min, term));
 					}
 				}
+			}
+			
+			if(TopicFilter.filterByTopics(queue)){
+				continue;
 			}
 
 			double sumW = sum(w);
@@ -168,6 +255,7 @@ public class BatchInference {
 				x[h][k][i] = 1.0/ N;
 			}
 		}
+		
 		/*
 		w[0] = 0.8 * Lambda;
 		for(int k = 1; k < K; k ++){
