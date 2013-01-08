@@ -92,7 +92,8 @@ public class StopWords {
 			"without", "won't", "work", "worked", "working", "works", "would",
 			"wouldn't", "x", "y", "year", "years", "yes", "yet", "you",
 			"you'd", "you'll", "young", "younger", "youngest", "your",
-			"you're", "yours", "yourself", "yourselves", "you've", "z", "rt", ":d", "omg" };
+			"you're", "yours", "yourself", "yourselves", "you've", "z", 
+			"rt", ":d", "omg",  "oh", "lol", "haha"};
 
 	static {
 		System.out.println("Size of stop words is " + stopwords.length);
