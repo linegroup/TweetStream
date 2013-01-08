@@ -20,6 +20,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+import org.json.JSONArray;
+
+
 import cmu.arktweetnlp.Twokenize;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
@@ -153,7 +156,7 @@ public class RTProcess2 {
 			ResultSet rs = null;
 			try {
 				stmt = conn.createStatement();
-				String sqlTxt = "select *  from stream where t >= \'" + start + "\' and t < \'" + next +"\' order by t";
+				String sqlTxt = "select *  from tokenizedstream where t >= \'" + start + "\' and t < \'" + next +"\' order by t";
 				if (stmt.execute(sqlTxt)) {
 					
 					rs = stmt.getResultSet();
@@ -163,11 +166,28 @@ public class RTProcess2 {
 						/////////////////////////////////
 												
 						final Timestamp t = rs.getTimestamp("t");
+						/*
 						String tweet = rs.getString("tweet");
 						
 						tweet = decode(tweet);
 						tweet = downcase(tweet);
 						List<String> terms = tokenize(tweet);
+						*/
+						String tweet = rs.getString("tweet");
+						
+						List<String> terms = new LinkedList<String>();
+						
+						
+						try {
+							JSONArray array = new JSONArray(tweet);
+							for (int k = 0; k < array.length(); k++) {
+								terms.add(array.getString(k));
+							}
+						} catch (org.json.JSONException je) {
+							je.printStackTrace();
+							continue;
+						}
+
 						
 						List<String> finalTerms = new LinkedList<String>();
 						for(String term : terms){
