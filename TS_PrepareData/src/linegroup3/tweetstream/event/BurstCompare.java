@@ -4,14 +4,13 @@ import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class BurstCompare {
-	static private final double JOIN_THRESHOLD = 0.05;
-	static private final double SIMILARITY_THRESHOLD = 0.01;
-	static public final double MIN_SUPPORT = 0.03;
+	static private final double JOIN_THRESHOLD = 0.0025;
+	static public final double MIN_SUPPORT = 0.025;
 	static private final long T_GAP = 60 * 60 * 1000; // 1 hour
-	
+
+/*
 	static public List<Burst> merge(List<Burst> bursts){
 		if(bursts.size() <= 1){
 			return bursts;
@@ -57,6 +56,7 @@ public class BurstCompare {
 		}
 	}
 	
+	
 	static private String maxProb(Burst burst){
 		double max = 0.0;
 		String ret = null;
@@ -69,7 +69,7 @@ public class BurstCompare {
 		}
 		
 		return ret;
-	}
+	}*/
 	
 	static private boolean join(OnlineEvent event, Burst burst){
 		if(burst.getTime().after(new Timestamp(event.getEnd().getTime() + T_GAP))){
@@ -77,54 +77,77 @@ public class BurstCompare {
 		}
 		
 		double s = 0.0;
-		double s2 = 0.0;
 		
 		for(Map.Entry<String, Double> entry : burst.getDistribution().entrySet()){
 			String word = entry.getKey();
 			double p = entry.getValue();
-			if(event.getKeywords().contains(word)){
-				s += p;
-			}else{
-				s2 += p;
-			}
+			s += p * event.support(word);
 		}
-		/*
-		for(String word : event.getKeywords()){
-			Double p = burst.getDistribution().get(word);
-			if(p == null)	continue;
-			
-			s += p;
-		}*/
+
 		return  s > JOIN_THRESHOLD;
 	}
 	
 	static public void join(List<OnlineEvent> events, List<Burst> bursts){
-		bursts = BurstCompare.merge(bursts);
-		
-		List<Burst> toBeAdded = new LinkedList<Burst>();
-		
+		int n = bursts.size();
+		Burst[] ee = new Burst[n];
+		OnlineEvent[] er = new OnlineEvent[n];		
+				
+		int i = 0; int j = 0;
 		for(Burst burst : bursts){
 			boolean joined = false;
+			ee[i] = burst;
 			for(OnlineEvent event : events){
 				if(join(event, burst)){
-					event.add(burst);
+
+					er[i] = event;
+					
 					joined = true;
 					break;
 				}
 			}
 			if(!joined){
-				toBeAdded.add(burst);
+				er[i] = null;
+			}
+			
+			i ++;
+		}
+		
+		/////////////////////// remove intersection words
+		for(i = 0; i < n; i ++){
+			if(er[i] != null)
+			for(j = 0; j < n; j ++){
+				if(er[j] != null && er[i] != er[j]){
+					for(String word : commonWords(ee[j], er[j])){
+						ee[i].getDistribution().remove(word);
+					}
+				}
+			}
+		}		
+		
+		
+		for (j = 0; j < n; j++) {
+			if (er[j] != null) {
+				er[j].add(ee[j]);
+			} else {
+
+				OnlineEvent event = new OnlineEvent(ee[j]);
+				if (event.getKeywords().size() > 0) {
+					events.add(event);
+				}
+
 			}
 		}
 		
-		for(Burst burst : toBeAdded){
-			//events.add(new OnlineEvent(burst));
-			OnlineEvent event = new OnlineEvent(burst);
-			if(event.getKeywords().size() > 0){
-				events.add(event);
+	}
+	
+	static private List<String> commonWords(Burst burst, OnlineEvent event){
+		List<String> ret = new LinkedList<String>();
+		for(String word : burst.getDistribution().keySet()){
+			if(event.getKeywords().contains(word)){
+				ret.add(word);
 			}
-		}
-		
+		}	
+		return ret;
 	}
 
 }

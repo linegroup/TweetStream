@@ -2,12 +2,17 @@ package linegroup3.tweetstream.event;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import linegroup3.tweetstream.postprocess.ValueTermPair;
 
@@ -78,6 +83,10 @@ public class OnlineEvent {
 		for(String word : keywords){
 			ret += (word + ",");
 		}
+		ret += "\t:";
+		for(String word : allwords()){
+			ret += (word + ",");
+		}
 		return ret;
 	}
 	
@@ -92,4 +101,66 @@ public class OnlineEvent {
 		
 		return s / bursts.size();
 	}
+	
+	public List<String> allwords(){ // all the words in order by weight
+		Set<String> words = new TreeSet<String>();
+		for(Burst burst : bursts.values()){
+			for(String word : burst.getDistribution().keySet()){
+				words.add(word);
+			}
+		}
+		
+		int n = words.size();
+		ValueTermPair[] pairs = new ValueTermPair[n];
+		int i = 0;
+		for(String word : words){
+			pairs[i] = new ValueTermPair(support(word), word);
+			i ++;
+		}
+		
+		Arrays.sort(pairs, new Comparator<ValueTermPair>() {
+
+			@Override
+			public int compare(ValueTermPair arg0, ValueTermPair arg1) {
+				if (arg0.v > arg1.v)
+					return -1;
+				if (arg0.v < arg1.v)
+					return 1;
+				return 0;
+			}
+
+		});
+		
+		List<String> ret = new LinkedList<String>();
+		for(i = 0; i < n; i ++){
+			ret.add(pairs[i].term);
+		}
+		
+		return ret;
+	}
+	
+	public String getKeywordsStr(){
+		JSONArray array = new JSONArray();
+		for(String word : keywords){
+			array.put(word);
+		}
+		return array.toString();
+	}
+	
+	
+	public JSONArray getDetail() throws JSONException{
+		JSONArray ret = new JSONArray();
+		for(Map.Entry<Timestamp, Burst> entry : bursts.entrySet()){
+			JSONObject burst = new JSONObject();
+			JSONObject obj = new JSONObject(entry.getValue().getDistribution());
+			burst.put("p", obj);
+			burst.put("t", entry.getKey());
+			burst.put("op", entry.getValue().getOptima());
+			
+			ret.put(burst);
+		}
+		return ret;
+	}
+	
+	
 }
