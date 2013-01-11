@@ -79,6 +79,8 @@ public class RTProcess2 {
 	}*/
 	static private BufferedWriter speedlog = null;
 	static private BufferedWriter dspeedlog = null;
+	
+	static final String OutputPath = "./data";
 		
 	
 	private static void resetConnection(){
@@ -138,8 +140,8 @@ public class RTProcess2 {
 		DETECT_T= dt;
 		StopWords.initialize();
 		
-		speedlog = new BufferedWriter(new FileWriter("./data/speedlog.txt"));
-		dspeedlog = new BufferedWriter(new FileWriter("./data/dspeedlog.txt"));
+		speedlog = new BufferedWriter(new FileWriter("OutputPath/speedlog.txt"));
+		dspeedlog = new BufferedWriter(new FileWriter("OutputPath/dspeedlog.txt"));
 		
 		Timestamp one_min_after_lastTime = new Timestamp(0);
 
@@ -522,7 +524,7 @@ public class RTProcess2 {
 		Timestamp currentTime = sketch.getTime();
 		String dir = currentTime.toString();
 		dir = dir.replace(" ", "_").replace("-", "_").replace(":", "_").replace(".", "_");
-		dir = "./data/sketch/" + dir;
+		dir = "OutputPath/sketch/" + dir;
 		new File(dir).mkdir();
 		
 		
