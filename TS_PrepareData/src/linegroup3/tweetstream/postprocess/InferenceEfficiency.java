@@ -68,7 +68,7 @@ public class InferenceEfficiency {
 	public void infer(){
 		//debugFlag = true;
 		
-		load("D:/data_for_release2/data/sketch/2011_10_05_15_50_41_0", 'A');
+		load("D:/data_for_release2/data/sketch/2011_10_05_15_49_40_0", 'A');
 		initial();
 		F();
 		

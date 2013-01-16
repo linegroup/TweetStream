@@ -2,10 +2,12 @@ package linegroup3.tweetstream.postprocess;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Set;
@@ -14,6 +16,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+import linegroup3.tweetstream.event.Burst;
+import linegroup3.tweetstream.event.BurstCompare;
+import linegroup3.tweetstream.event.DBAgent;
+import linegroup3.tweetstream.event.OnlineEvent;
 import linegroup3.tweetstream.preparedata.HashFamily;
 
 
@@ -41,6 +47,8 @@ public class BatchInference {
 	
 	private Set<String> actives = new TreeSet<String>();
 	
+	List<OnlineEvent> events = new LinkedList<OnlineEvent>();
+	
 	public void batchInfer(String dirpath) throws Exception{
 		File dir = new File(dirpath);
 		String[] sketchDirStrs = dir.list();
@@ -50,9 +58,20 @@ public class BatchInference {
 			
 			File sketchDir = new File(dirpath + sketchDirStr);
 			if (sketchDir.isDirectory()) {
+				////////// debug ////////
+				//if(!sketchDirStr.contains("2011_12_15_03")) continue;
+				////////////////////////
 				infer(sketchDir.getAbsolutePath());
 			}
 		}
+		
+		
+		System.out.println("-------------------------------------------------------------------");
+		for(OnlineEvent event : events){
+			System.out.println(event.toString());
+			DBAgent.save(event);
+		}
+		
 	}
 	
 	private void infer(String path){	
@@ -102,7 +121,11 @@ public class BatchInference {
 			
 			System.out.println(dateStr + "\t" + ct/1000.0 + "s\t" + (fs1.F/fs0.F));
 		
-			analyse();
+			
+			List<Burst> bursts = new LinkedList<Burst>();
+			analyse(Timestamp.valueOf(dateStr), (fs1.F/fs0.F), bursts);
+			
+			BurstCompare.join(events, bursts);
 		}
 		else{
 			//System.out.println("error!");
@@ -235,6 +258,68 @@ public class BatchInference {
 			}
 			System.out.println("------------------------------------------");
 
+		}
+	}
+	
+	
+	private void analyse(Timestamp t, double optima, List<Burst> bursts){
+		final int TopN = 15;
+
+		for (int k = 0; k < K; k++) {
+			
+			if(TopicFilter.filterByW(w[k]/Lambda)){
+				continue;
+			}
+			
+			PriorityQueue<ValueTermPair> queue = new PriorityQueue<ValueTermPair>(
+					TopN, new Comparator<ValueTermPair>() {
+
+						@Override
+						public int compare(ValueTermPair arg0, ValueTermPair arg1) {
+							if (arg0.v > arg1.v)
+								return 1;
+							if (arg0.v < arg1.v)
+								return -1;
+							return 0;
+						}
+
+					});
+
+			for (String term : actives) {
+				double min = 1e10;
+				for (int h = 0; h < H; h++) {
+					double v = x[h][k][HashFamily.hash(h,term)];
+					if(v < 0) v = 0;
+					if (v < min)
+						min = v;
+				}
+				
+				if(min < TopicFilter.minProb) continue;
+				
+				if (queue.size() < TopN) {
+					queue.offer(new ValueTermPair(min, term));
+				} else {
+					ValueTermPair pair = queue.peek();
+					if(pair.v < min){
+						queue.poll();
+						queue.offer(new ValueTermPair(min, term));
+					}
+				}
+			}
+			
+			if(TopicFilter.filterByTopics(queue)){
+				continue;
+			}
+
+			double sumW = sum(w);
+			System.out.println("Topic " + k + " ---------" + "   " + w[k]/sumW);
+			Burst burst = new Burst(t, optima);
+			for (ValueTermPair pair : queue) {
+				System.out.println(pair.term + "\t" + pair.v);
+				burst.prob(pair.term, pair.v);
+			}
+			System.out.println("------------------------------------------");
+			bursts.add(burst);
 		}
 	}
 	

@@ -6,12 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 public class BurstCompare {
+	static private final double SIMILARITY_THRESHOLD = 0.01;
 	static private final double JOIN_THRESHOLD = 0.0025;
 	static public final double MIN_SUPPORT = 0.025;
 	static private final long T_GAP = 60 * 60 * 1000; // 1 hour
 
-/*
-	static public List<Burst> merge(List<Burst> bursts){
+
+	static private List<Burst> merge(List<Burst> bursts){
 		if(bursts.size() <= 1){
 			return bursts;
 		}
@@ -38,6 +39,7 @@ public class BurstCompare {
 	}
 	
 	static private void reduceIntersection(List<Burst> bursts){
+		/*
 		String[] maxWords = new String[bursts.size()];
 		int i = 0;
 		for(Burst burst : bursts){
@@ -53,7 +55,7 @@ public class BurstCompare {
 				}
 			}
 			i ++;
-		}
+		}*/
 	}
 	
 	
@@ -69,11 +71,15 @@ public class BurstCompare {
 		}
 		
 		return ret;
-	}*/
+	}
 	
-	static private boolean join(OnlineEvent event, Burst burst){
+	
+	
+	/////////////////////////////////////////////////////////
+	
+	static private double join(OnlineEvent event, Burst burst){
 		if(burst.getTime().after(new Timestamp(event.getEnd().getTime() + T_GAP))){
-			return false;
+			return 0.0;
 		}
 		
 		double s = 0.0;
@@ -84,53 +90,203 @@ public class BurstCompare {
 			s += p * event.support(word);
 		}
 
-		return  s > JOIN_THRESHOLD;
+		return  s;
 	}
 	
 	static public void join(List<OnlineEvent> events, List<Burst> bursts){
-		int n = bursts.size();
-		Burst[] ee = new Burst[n];
-		OnlineEvent[] er = new OnlineEvent[n];		
-				
-		int i = 0; int j = 0;
-		for(Burst burst : bursts){
-			boolean joined = false;
-			ee[i] = burst;
-			for(OnlineEvent event : events){
-				if(join(event, burst)){
-
-					er[i] = event;
-					
-					joined = true;
-					break;
+		int n = bursts.size();		
+		if(n > 1){
+			bursts = BurstCompare.merge(bursts);
+			n = bursts.size();
+		}
+		
+		int m = events.size();
+		if(m == 0){
+			for(Burst burst : bursts){
+				OnlineEvent event = new OnlineEvent(burst);
+				if (event.getKeywords().size() > 0) {
+					events.add(event);
 				}
 			}
-			if(!joined){
-				er[i] = null;
-			}
-			
+			return;
+		}
+		
+		
+		int i = 0;
+		Burst[] bs = new Burst[n];
+		double[] values = new double[n];
+		int[] index = new int[n];
+		for(Burst burst : bursts){
+			bs[i] = burst;
+			values[i] = 0.0;
+			index[i] = -1;
 			i ++;
 		}
 		
-		/////////////////////// remove intersection words
+		int j = 0;
+		OnlineEvent[] es = new OnlineEvent[m];
+		for(OnlineEvent event : events){
+			es[j] = event;
+			j ++;
+		}
+		
 		for(i = 0; i < n; i ++){
-			if(er[i] != null)
-			for(j = 0; j < n; j ++){
-				if(er[j] != null && er[i] != er[j]){
-					for(String word : commonWords(ee[j], er[j])){
-						ee[i].getDistribution().remove(word);
-					}
+			for(j = 0; j < m; j ++){
+				double s = join(es[j], bs[i]);
+				if(s > values[i]){
+					values[i] = s;
+					index[i] = j;
 				}
 			}
-		}		
+		}
+		
+		for(i = 0; i < n; i ++){
+			if(values[i] > JOIN_THRESHOLD){
+				es[index[i]].add(bs[i]);
+			}else{
+				index[i] = -1;
+			}
+		}
+		
+		for(i = 0; i < n; i ++){
+			if(index[i] == -1){
+				OnlineEvent event = new OnlineEvent(bs[i]);
+				if (event.getKeywords().size() > 0) {
+					events.add(event);
+				}
+			}
+		}
 		
 		
-		for (j = 0; j < n; j++) {
-			if (er[j] != null) {
-				er[j].add(ee[j]);
+	}
+	
+	/*
+	static public void join(List<OnlineEvent> events, List<Burst> bursts){
+		int n = bursts.size();		
+		if(n > 1){
+			bursts = BurstCompare.merge(bursts);
+			n = bursts.size();
+		}
+		
+		int m = events.size();
+		if(m == 0){
+			for(Burst burst : bursts){
+				OnlineEvent event = new OnlineEvent(burst);
+				if (event.getKeywords().size() > 0) {
+					events.add(event);
+				}
+			}
+			return;
+		}
+		
+		
+		int i = 0;
+		Burst[] bs = new Burst[n];
+		for(Burst burst : bursts){
+			bs[i] = burst;
+			i ++;
+		}
+		
+		int j = 0;
+		OnlineEvent[] es = new OnlineEvent[m];
+		double[] values = new double[m];
+		int[] index = new int[m];
+		for(OnlineEvent event : events){
+			es[j] = event;
+			values[j] = 0.0;
+			index[j] = -1;
+			j ++;
+		}
+		
+		for(i = 0; i < n; i ++){
+			for(j = 0; j < m; j ++){
+				double s = join(es[j], bs[i]);
+				if(s > values[j]){
+					values[j] = s;
+					index[j] = i;
+				}
+			}
+		}
+		
+		for(j = 0; j < m; j ++){
+			if(values[j] > JOIN_THRESHOLD){
+				es[j].add(bs[index[j]]);
+			}else{
+				index[j] = -1;
+			}
+		}
+		
+		for(i = 0; i < n; i ++){
+			boolean added = false;
+			for(j = 0; j < m; j ++){
+				if(index[j] == i){
+					added = true;
+					break;
+				}
+			}
+			if(!added){
+				OnlineEvent event = new OnlineEvent(bs[i]);
+				if (event.getKeywords().size() > 0) {
+					events.add(event);
+				}
+			}
+		}
+		
+		
+	}*/
+	
+	/*
+	static public void join(List<OnlineEvent> events, List<Burst> bursts){
+		int n = bursts.size();
+		
+		if(n > 1){
+			bursts = BurstCompare.merge(bursts);
+		}
+		
+		Burst[] ee = new Burst[n];
+		OnlineEvent[] er = new OnlineEvent[n];
+
+		int i = 0;
+		for (Burst burst : bursts) {
+			ee[i] = burst;
+			i++;
+		}
+
+		int m = events.size();
+		if (m > 0) {
+			boolean[] booked = new boolean[m];
+			OnlineEvent[] ev = new OnlineEvent[m];
+			int j = 0;
+			for(OnlineEvent event : events){
+				ev[j] = event;
+				j ++;
+			}
+
+			for (i = 0; i < n; i ++) {
+				boolean joined = false;
+				for (j = 0; j < m; j ++) {
+					if (!booked[j] && join(ev[j], ee[i])) {
+
+						er[i] = ev[j];
+						booked[j] = true;
+						joined = true;
+						break;
+					}
+				}
+				if (!joined) {
+					er[i] = null;
+				}
+			}
+
+
+		}
+
+		for (i = 0; i < n; i++) {
+			if (er[i] != null) {
+				er[i].add(ee[i]);
 			} else {
 
-				OnlineEvent event = new OnlineEvent(ee[j]);
+				OnlineEvent event = new OnlineEvent(ee[i]);
 				if (event.getKeywords().size() > 0) {
 					events.add(event);
 				}
@@ -138,9 +294,9 @@ public class BurstCompare {
 			}
 		}
 		
-	}
+	}*/
 	
-	static private List<String> commonWords(Burst burst, OnlineEvent event){
+/*	static private List<String> commonWords(Burst burst, OnlineEvent event){
 		List<String> ret = new LinkedList<String>();
 		for(String word : burst.getDistribution().keySet()){
 			if(event.getKeywords().contains(word)){
@@ -148,6 +304,6 @@ public class BurstCompare {
 			}
 		}	
 		return ret;
-	}
+	}*/
 
 }

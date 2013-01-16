@@ -40,7 +40,23 @@ public class ProcessSpeedLog {
 		BufferedReader reader = new BufferedReader(new FileReader(dir + "/dspeedlog.txt"));
 		BufferedWriter writer = new BufferedWriter(new FileWriter(dir + "/printDspeedlog.txt"));
 		String line = null;
-		final int COUNT = 1000;
+		final int COUNT = 100000;
+		int cnt = 0;
+		while((line = reader.readLine()) != null && cnt < COUNT){
+			writer.write(line);
+			writer.write("\n");
+			
+			cnt ++;
+		}
+		writer.close();
+		reader.close();	
+	}
+	
+	public static void print(String dir) throws Exception {
+		BufferedReader reader = new BufferedReader(new FileReader(dir + "/speedlog.txt"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(dir + "/printSpeedlog.txt"));
+		String line = null;
+		final int COUNT = 100000;
 		int cnt = 0;
 		while((line = reader.readLine()) != null && cnt < COUNT){
 			writer.write(line);
@@ -108,8 +124,8 @@ public class ProcessSpeedLog {
 	}
 	
 	public static void trimD(String dir) throws Exception{
-		Timestamp st = Timestamp.valueOf("2011-10-05 12:00:00"); // excluded
-		Timestamp et = Timestamp.valueOf("2011-10-06 00:00:00"); // included
+		Timestamp st = Timestamp.valueOf("2011-12-13 00:00:00"); // excluded
+		Timestamp et = Timestamp.valueOf("2011-12-17 00:00:00"); // included
 		
 		BufferedReader reader = new BufferedReader(new FileReader(dir + "/processedDspeedlog.txt"));
 		BufferedWriter writer = new BufferedWriter(new FileWriter(dir + "/trimD.txt"));

@@ -21,7 +21,6 @@ public class OnlineEvent {
 	private Timestamp start = null;
 	private Timestamp end = null;
 	
-	private Set<String> keywords = new TreeSet<String>();
 
 	private Map<Timestamp, Burst> bursts = new TreeMap<Timestamp, Burst>();
 	
@@ -34,32 +33,7 @@ public class OnlineEvent {
 		end = burst.getTime();
 		
 		bursts.put(burst.getTime(), burst);
-		
-		Set<String> words = burst.getDistribution().keySet();
-		ValueTermPair[] array = new ValueTermPair[words.size()];
-		int index = 0;
-		for(String word : words){
-			array[index] = new ValueTermPair(support(word), word);
-			index ++;
-		}
-		
-		Arrays.sort(array, new Comparator<ValueTermPair>(){
 
-			@Override
-			public int compare(ValueTermPair o1, ValueTermPair o2) {
-				if(o1.v < o2.v)	return 1;
-				if(o1.v > o2.v)	return -1;
-				return 0;
-			}});
-		
-		
-		int TOP_N = 3;
-		for(int i = 0; i < TOP_N && i < words.size(); i ++){
-			String word = array[i].term;
-			if(support(word) >= BurstCompare.MIN_SUPPORT){
-				keywords.add(word);
-			}
-		}
 	}
 	
 	public Timestamp getStart(){
@@ -70,8 +44,42 @@ public class OnlineEvent {
 		return end;
 	}
 	
-	public Set<String> getKeywords(){
-		return keywords;
+	public List<String> getKeywords(){
+		Set<String> words = new TreeSet<String>();
+		for(Burst burst : bursts.values()){
+			for(String word : burst.getDistribution().keySet()){
+				words.add(word);
+			}
+		}
+		
+		int n = words.size();
+		ValueTermPair[] pairs = new ValueTermPair[n];
+		int i = 0;
+		for(String word : words){
+			pairs[i] = new ValueTermPair(support(word), word);
+			i ++;
+		}
+		
+		Arrays.sort(pairs, new Comparator<ValueTermPair>() {
+
+			@Override
+			public int compare(ValueTermPair arg0, ValueTermPair arg1) {
+				if (arg0.v > arg1.v)
+					return -1;
+				if (arg0.v < arg1.v)
+					return 1;
+				return 0;
+			}
+
+		});
+		
+		int TOP_N = 3;
+		List<String> ret = new LinkedList<String>();
+		for(i = 0; i < n && i < TOP_N; i ++){
+			ret.add(pairs[i].term);
+		}
+		
+		return ret;
 	}
 	
 	public Map<Timestamp, Burst> getBursts(){
@@ -80,7 +88,7 @@ public class OnlineEvent {
 	
 	public String toString(){
 		String ret = "[" + start + "," + end + "]\t";
-		for(String word : keywords){
+		for(String word : getKeywords()){
 			ret += (word + ",");
 		}
 		ret += "\t:";
@@ -141,7 +149,7 @@ public class OnlineEvent {
 	
 	public String getKeywordsStr(){
 		JSONArray array = new JSONArray();
-		for(String word : keywords){
+		for(String word : getKeywords()){
 			array.put(word);
 		}
 		return array.toString();

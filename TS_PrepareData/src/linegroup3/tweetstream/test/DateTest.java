@@ -10,7 +10,8 @@ public class DateTest {
 		
 		double wholeDay = 24*60*60*1000;
 		
-		System.out.println((e.getTime() - s.getTime())/wholeDay);
+		//System.out.println((e.getTime() - s.getTime())/wholeDay);
+		System.out.println((Timestamp.valueOf("2011-11-10 19:00:00.0").getTime() - s.getTime())/wholeDay);
 	}
 	
 }
