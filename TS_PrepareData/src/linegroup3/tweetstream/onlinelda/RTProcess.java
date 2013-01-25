@@ -21,6 +21,7 @@ import org.json.JSONException;
 
 public class RTProcess {
 	private static int nTopic = -1;
+	private static int gap = -1;
 	private static ThreeSigmaMonitor[] monitors = null;
 	
 	private static List<OnlineEvent> events = new LinkedList<OnlineEvent>();
@@ -28,8 +29,9 @@ public class RTProcess {
 	//private static Random rand = new Random(); // for debug
 	
 	public static void runTime(Timestamp start, Timestamp end, Timestamp dt,
-			int gap, int nT) throws IOException {
+			int g, int nT) throws IOException {
 		nTopic = nT;
+		gap = g;
 		OnlineLDA model = new OnlineLDA(50.0 / nTopic, 0.01, nTopic, 100000);
 		
 		System.out.println("start\t" + start);
