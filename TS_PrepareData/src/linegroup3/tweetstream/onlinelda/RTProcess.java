@@ -147,7 +147,9 @@ public class RTProcess {
 	}
 	
 	static private void save(OnlineEvent event){
-		String sqlStr = "insert into onlineldaevents (topicId, start_t, end_t, keywords, detail) values(?, ?, ?, ?, ?)";
+		int g = gap / (60 * 1000);
+		String table = "onlineldaevents_1m_" + g + "_" + nTopic;
+		String sqlStr = "insert into " + table + " (topicId, start_t, end_t, keywords, detail) values(?, ?, ?, ?, ?)";
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(sqlStr);
