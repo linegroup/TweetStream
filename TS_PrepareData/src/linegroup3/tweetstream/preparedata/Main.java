@@ -10,6 +10,8 @@ import java.util.TreeMap;
 import linegroup3.tweetstream.distribution.DistributionTest;
 import linegroup3.tweetstream.event.DBAgent;
 import linegroup3.tweetstream.inference.ParallelInfer;
+import linegroup3.tweetstream.onlinelda.Test;
+import linegroup3.tweetstream.onlinelda.ThreeSigmaMonitor;
 import linegroup3.tweetstream.postprocess.BatchInference;
 import linegroup3.tweetstream.postprocess.BatchInferenceForBaseline;
 import linegroup3.tweetstream.postprocess.InferenceEfficiency;
@@ -47,8 +49,31 @@ public class Main {
 		
 		//Speed.doJob();
 		//Speed.showDSpeed(Timestamp.valueOf("2011-10-03 00:00:00"), Timestamp.valueOf("2011-10-06 23:00:00"));
+		/*
+		double data[] = new double[30];
+
+		data[15] = 1;
+		data[24] = 3;
+		data[25] = 10;
+		data[26] = 3;
 		
 		
+		ThreeSigmaMonitor monitor = new ThreeSigmaMonitor(10, 10);
+		for(int i = 0; i < 30; i ++){
+			if(monitor.add(data[i])){
+				System.out.println(i);
+			}
+		}*/
+		if(args.length < 4){
+			//System.out.println("Usage: -s \"2011-12-13 00:00:00.0\" -e \"2011-12-16 00:00:00.0\" -gap 15 -nTopic 100");
+			System.out.println("Usage: -gap 15 -nTopic 100");
+			return;
+		}
+		int gap = Integer.parseInt(args[1]);
+		int nTopic = Integer.parseInt(args[3]);
+		
+		linegroup3.tweetstream.onlinelda.RTProcess.runTime(Timestamp.valueOf("2011-11-25 00:00:00.0"), Timestamp.valueOf("2012-01-02 00:00:00.0"),
+				null, gap* 60 * 1000, nTopic);
 		//new RTProcess().runTime(Timestamp.valueOf("2011-09-01 00:00:00.0"), Timestamp.valueOf("2012-05-01 00:00:00.0"));
 		//new RTProcess().runTime(Timestamp.valueOf("2011-10-05 15:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		//ProcessSpeedLog.trimD("D:/data_for_release2/data");
@@ -93,6 +118,8 @@ public class Main {
 		//new BatchInference().batchInfer("D:/share/data_2011_12_more_stop_words/sketch/");
 		//new BatchInference().batchInfer("D:/share/test_more_stop_words/");
 		//new BatchInference().batchInfer("D:/share/data_add_ok/sketch/");
+		//new BatchInference().batchInfer("D:/share/test_newstream2/");
+		//new BatchInference().batchInfer("D:/share/data_2011_3_months/sketch/");
 		
 		
 		//new BatchInferenceForBaseline().batchInfer("D:/share/data_2011_12_more_stop_words/sketch/");
@@ -112,7 +139,7 @@ public class Main {
 		//DBAgent.processEvents_baseline();
 		//DBAgent.processEvents();
 		//DBAgent.testBurstOnTwoStateMachine();
-		DBAgent.testBurstOnTwoStateMachine_baseline();
+		//DBAgent.testBurstOnTwoStateMachine_baseline();
 		//DBAgent.testBurstOnTwoStateMachine_minute();
 		
 		/////////////////////////////////////////////////////////////////
@@ -188,7 +215,7 @@ public class Main {
 		System.out.println(map.size());
 		*/
 		
-		
+		//linegroup3.tweetstream.onlinelda.Test.test();
 	}
 	
 	/*
