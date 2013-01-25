@@ -9,6 +9,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
+
+import org.json.JSONObject;
 
 
 
@@ -32,7 +35,7 @@ public class OnlineLDA {
 	
 	
 	
-	public void train(int nIter) throws IOException{
+	public double[] train(int nIter) throws IOException{
 		initialTable();
 		
 		
@@ -40,11 +43,13 @@ public class OnlineLDA {
 			gibbsSample();
 		}
 		
-		print();
+		//print();
 		
-		System.out.println("WZtable size is" + WZtable.size());
+		//System.out.println("WZtable size is" + WZtable.size());
 		
-		analyse();
+		//analyse();
+		
+		return trace();
 	}
 	
 	/*private void print(){
@@ -64,6 +69,40 @@ public class OnlineLDA {
 			
 		}
 	}*/
+	
+	Map<String, Double> getTopic(int z){
+		Map<String, Double> topic = new TreeMap<String, Double>();
+		
+		for (Map.Entry<String, int[]> entry : WZtable.entrySet()) {
+			double p = entry.getValue()[z];
+			p /= Wcounts[z];
+			if (p >= 0.01) {
+
+				topic.put(entry.getKey(), p);
+
+			}
+		}
+
+		
+		return topic;
+	}
+	
+	public void print(int z) {
+		System.out.print("topic" + z + ":\t");
+
+		for (Map.Entry<String, int[]> entry : WZtable.entrySet()) {
+			double p = entry.getValue()[z];
+			p /= Wcounts[z];
+			if (p >= 0.01) {
+				p *= 100;
+				System.out.print(entry.getKey() + " ");
+				System.out.print((int) p + "%,");
+			}
+		}
+
+		System.out.println();
+
+	}
 	
 	private void print(){
 		for(int z = 0; z < nTopic; z ++){
@@ -206,6 +245,42 @@ public class OnlineLDA {
 		
 	}
 	
+	private double[] trace(){
+		double[] tracks = new double[nTopic];
+		for (Doc doc : docs) {
+			
+			int[] t = new int[nTopic];
+			
+			for(Token token : doc.tokens){
+				int z = token.z;
+				t[z] ++;
+			}
+			
+			double[] n = normalize(t);
+			
+			for(int i = 0; i < nTopic; i ++){
+				tracks[i] += n[i];
+			}	
+		}
+		
+		
+		StringBuilder sb = new StringBuilder();
+		for(double track : tracks){
+			sb.append(track + "\t");
+		}
+		sb.append("\n");
+				
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter("./tracks.txt", true));
+			out.write(sb.toString());
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return tracks;
+	}
+	
 	private void analyse(){
 		double[] tracks = new double[nTopic];
 		for (Doc doc : docs) {
@@ -293,6 +368,8 @@ public class OnlineLDA {
 		
 
 	private static int docId = 0;
+	
+	
 
 
 }
