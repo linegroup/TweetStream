@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.rt2.StopWords;
 
 import org.json.JSONArray;
@@ -26,7 +27,7 @@ public class RTProcess {
 	
 	private static List<OnlineEvent> events = new LinkedList<OnlineEvent>();
 
-	//private static Random rand = new Random(); // for debug
+	private static Random rand = new Random(); // for debug
 	
 	public static void runTime(Timestamp start, Timestamp end, Timestamp dt,
 			int g, int nT) throws IOException {
@@ -52,6 +53,7 @@ public class RTProcess {
 		
 		Timestamp next = new Timestamp(start.getTime() + gap);
 
+		boolean debug = Config.config.getBoolean("debug", false);
 
 		while (start.before(end)) {
 			System.out.println(new Timestamp(System.currentTimeMillis())
@@ -69,7 +71,9 @@ public class RTProcess {
 					
 					rs = stmt.getResultSet();
 					while (rs.next()) {
-						//if(rand.nextInt(20) != 0) continue; // for debug
+						if(debug){
+							if(rand.nextInt(50) != 0) continue; // for debug
+						}
 						
 						String tweet = rs.getString("tweet");
 						
@@ -110,6 +114,9 @@ public class RTProcess {
 							Map<String, Double> topic = model.getTopic(i);
 							Burst burst = new Burst(i, detectionTime, start, next, topic);
 							add(burst);
+							
+							System.out.println(burst.toString());
+							System.out.println("###################");
 						}
 					}
 				}
@@ -123,8 +130,10 @@ public class RTProcess {
 		
 		
 		resetConnection();
+		String dbName = Config.config.getString("db");
+		createTable(dbName);
 		for(OnlineEvent event : events){
-			save(event);
+			save(event, dbName);
 		}
 
 	}
@@ -146,10 +155,8 @@ public class RTProcess {
 		}
 	}
 	
-	static private void save(OnlineEvent event){
-		int g = gap / (60 * 1000);
-		String table = "onlineldaevents_1m_" + g + "_" + nTopic;
-		String sqlStr = "insert into " + table + " (topicId, start_t, end_t, keywords, detail) values(?, ?, ?, ?, ?)";
+	static private void save(OnlineEvent event, String dbName){
+		String sqlStr = "insert into " + dbName + " (topicId, start_t, end_t, keywords, detail) values(?, ?, ?, ?, ?)";
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(sqlStr);
@@ -228,6 +235,32 @@ public class RTProcess {
 			conn = null;
 
 		}
+	}
+	
+	private static void createTable(String name){
+		Statement stmt = null;
+		try {
+			stmt = conn.createStatement();
+			stmt.execute("create table " + name + " like onlineldaevents");
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+		} finally {
+			// it is a good idea to release
+			// resources in a finally{} block
+			// in reverse-order of their creation
+			// if they are no-longer needed
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (SQLException sqlEx) {
+				} // ignore
+				stmt = null;
+			}
+		}
+		
 	}
 
 }

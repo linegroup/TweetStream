@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.configuration.BaseConfiguration;
+
+import linegroup3.common.Config;
 import linegroup3.tweetstream.distribution.DistributionTest;
 import linegroup3.tweetstream.event.DBAgent;
 import linegroup3.tweetstream.inference.ParallelInfer;
@@ -64,16 +67,44 @@ public class Main {
 				System.out.println(i);
 			}
 		}*/
-		if(args.length < 4){
-			//System.out.println("Usage: -s \"2011-12-13 00:00:00.0\" -e \"2011-12-16 00:00:00.0\" -gap 15 -nTopic 100");
-			System.out.println("Usage: -gap 15 -nTopic 100");
-			return;
-		}
-		int gap = Integer.parseInt(args[1]);
-		int nTopic = Integer.parseInt(args[3]);
 		
-		linegroup3.tweetstream.onlinelda.RTProcess.runTime(Timestamp.valueOf("2011-11-25 00:00:00.0"), Timestamp.valueOf("2012-01-02 00:00:00.0"),
-				null, gap* 60 * 1000, nTopic);
+		
+		if(Config.config == null){
+			Config.config = new BaseConfiguration();
+			
+			if(args.length < 10){
+				System.out.println("Usage: -s \"2011-12-13 00:00:00.0\" -e \"2011-12-16 00:00:00.0\" -gap 15 -nTopic 100 -db test (optional)-debug true");
+				return;
+			}
+			
+			Timestamp s = Timestamp.valueOf(args[1]);
+			Config.config.setProperty("s", s);
+			Timestamp e = Timestamp.valueOf(args[3]);
+			Config.config.setProperty("e", e);
+			int gap = Integer.parseInt(args[5]);
+			Config.config.setProperty("gap", gap);
+			int nTopic = Integer.parseInt(args[7]);
+			Config.config.setProperty("nTopic", nTopic);
+			Config.config.setProperty("db", args[9]);
+			
+			if(args.length >= 12){
+				Config.config.setProperty("debug", Boolean.parseBoolean(args[11]));
+			}
+			
+			
+			linegroup3.tweetstream.onlinelda.RTProcess.runTime(s, e,	null, gap* 60 * 1000, nTopic);
+		}else{
+			Timestamp s = Timestamp.valueOf(Config.config.getString("s"));
+			Timestamp e = Timestamp.valueOf(Config.config.getString("e"));
+			int nTopic = Config.config.getInt("nTopic");
+			int gap = Config.config.getInt("gap");
+			
+			linegroup3.tweetstream.onlinelda.RTProcess.runTime(s, e,	null, gap* 60 * 1000, nTopic);
+		}
+
+		
+		
+		
 		//new RTProcess().runTime(Timestamp.valueOf("2011-09-01 00:00:00.0"), Timestamp.valueOf("2012-05-01 00:00:00.0"));
 		//new RTProcess().runTime(Timestamp.valueOf("2011-10-05 15:00:00.0"), Timestamp.valueOf("2011-10-07 00:00:00.0"));
 		//ProcessSpeedLog.trimD("D:/data_for_release2/data");
@@ -110,6 +141,10 @@ public class Main {
 		//new BatchInference().batchInfer("D:/share/data/sketch/");
 		//new BatchInference().uniInfer("D:/share/data_2011_12/sketch/2011_12_15_03_33_46_0/");
 		//new BatchInference().batchInfer("D:/share/test_no_omg/");
+		//new BatchInference().batchInfer("D:/share/data_2011_3_months_threshold_10/sketch/");
+		
+		//new BatchInference().batchInfer("D:/share/data_2011_3_months_threshold_10/sketch/");
+		
 		
 		
 		//new BatchInference().uniInfer("D:/data/2011_12_16_20_20_59_0/");
