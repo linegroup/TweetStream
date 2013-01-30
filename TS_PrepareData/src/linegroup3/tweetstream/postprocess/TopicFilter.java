@@ -4,6 +4,7 @@ public class TopicFilter {
 	
 	public static double minProb = 0.02;
 	
+	
 	public static boolean filterByOptimization(double F0F1Ratio){
 		if(F0F1Ratio < 0.80){
 			return false;
@@ -39,5 +40,5 @@ public class TopicFilter {
 		
 		return true;
 	}
-
+	
 }
