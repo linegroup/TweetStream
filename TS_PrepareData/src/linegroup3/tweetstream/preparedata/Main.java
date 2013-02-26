@@ -27,7 +27,6 @@ import linegroup3.tweetstream.postprocess.Statistics;
 import linegroup3.tweetstream.postprocess.TokenizeStream;
 import linegroup3.tweetstream.postprocess.WordsStastics;
 import linegroup3.tweetstream.preparedata.othermodel.RandomChooseUsers;
-import linegroup3.tweetstream.preparedata.othermodel.TransferWords;
 import linegroup3.tweetstream.rt2.*;
 import linegroup3.tweetstream.test.DateTest;
 import linegroup3.tweetstream.trend.GetTrendingTopics;
