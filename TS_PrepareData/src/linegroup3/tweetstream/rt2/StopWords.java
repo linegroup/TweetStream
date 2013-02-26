@@ -1,16 +1,12 @@
 package linegroup3.tweetstream.rt2;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+
 import java.util.TreeSet;
 
 public class StopWords {
 
 	public static boolean isStopWord(int id) {
-		return stopIds.contains(id);
+		return false;
 	}
 	
 	public static boolean isStopWord(String word){
@@ -18,10 +14,8 @@ public class StopWords {
 	}
 	
 	public static void initialize(){
-		stopIds.contains(0);
 	}
 
-	private static TreeSet<Integer> stopIds = new TreeSet<Integer>();
 	private static TreeSet<String> stopWds = new TreeSet<String>();
 
 	private static String[] stopwords = { "a", "about", "above", "across",
@@ -96,70 +90,11 @@ public class StopWords {
 			"rt", ":d", "omg",  "oh", "lol", "haha", "ok", "okay", "hahaha"};
 
 	static {
-		System.out.println("Size of stop words is " + stopwords.length);
-		
-		Connection conn = null;
-		try {
-			conn = DriverManager
-					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
-							+ "user=root&password=123583");
-
-		} catch (SQLException ex) {
-			// handle any errors
-			System.out.println("SQLException: " + ex.getMessage());
-			System.out.println("SQLState: " + ex.getSQLState());
-			System.out.println("VendorError: " + ex.getErrorCode());
-
-			conn = null;
-
-		}
-
-		PreparedStatement stmt = null;
-		ResultSet rs = null;
 		
 		for (String word : stopwords){
 			stopWds.add(word);
 		}
 		
-		for (String word : stopwords)
-			try {
-				String sqlStr = "select * from termid where term = ?";
-				stmt = conn.prepareStatement(sqlStr);
-				stmt.setString(1, word);
-				if (stmt.execute()) {
-
-					rs = stmt.getResultSet();					
-					
-					while (rs.next()) {
-						int id = rs.getInt("id");
-						String term = rs.getString("term");
-						if(term.endsWith(word)){
-							stopIds.add(id);
-							System.out.println(word + "\t" + id);
-						}
-					}
-
-				}
-			} catch (SQLException ex) {
-				// handle any errors
-				System.out.println("SQLException: " + ex.getMessage());
-				System.out.println("SQLState: " + ex.getSQLState());
-				System.out.println("VendorError: " + ex.getErrorCode());
-			} finally {
-				// it is a good idea to release
-				// resources in a finally{} block
-				// in reverse-order of their creation
-				// if they are no-longer needed
-				if (stmt != null) {
-					try {
-						stmt.close();
-					} catch (SQLException sqlEx) {
-					} // ignore
-					stmt = null;
-				}
-			}
-		
-		System.out.println("Size of stop ids is " + stopIds.size());
 	}
 
 }
