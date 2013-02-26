@@ -9,7 +9,7 @@ public class Sketch {
 	static final long smooth_2 = 5; // minute
 	static final long oneMinute = 60 * 1000; // (ms)
 	
-	/////// SET H & K HERE !!!
+	/////// SET H & N HERE !!!
 	static final int H = 5;
 	static final int N = 200;
 	
