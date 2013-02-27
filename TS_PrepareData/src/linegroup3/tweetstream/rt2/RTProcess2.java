@@ -16,9 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
 
 import org.json.JSONArray;
 
@@ -30,6 +32,8 @@ import linegroup3.tweetstream.rt2.sket.Estimator;
 import linegroup3.tweetstream.rt2.sket.OutputSketch;
 import linegroup3.tweetstream.rt2.sket.Pair;
 import linegroup3.tweetstream.rt2.sket.Sketch;
+import linegroup3.tweetstream.workers.InferenceUnit;
+import linegroup3.tweetstream.workers.InferenceWorker;
 
 
 public class RTProcess2 {
@@ -77,8 +81,8 @@ public class RTProcess2 {
 
 		}
 	}*/
-	static private BufferedWriter speedlog = null;
-	static private BufferedWriter dspeedlog = null;
+//	static private BufferedWriter speedlog = null;
+//	static private BufferedWriter dspeedlog = null;
 	
 	static final String OutputPath = "./data";
 		
@@ -136,12 +140,18 @@ public class RTProcess2 {
 	
 	private Sketch currentSketch = null;
 	
+	
+	private BlockingQueue<InferenceUnit> queue = new SynchronousQueue<InferenceUnit>();
+	
 	public void runTime(Timestamp start, Timestamp end, Timestamp dt) throws IOException{	
+		InferenceWorker inferWorker = new InferenceWorker(queue);
+		new Thread(inferWorker).start();
+		
 		DETECT_T= dt;
 		StopWords.initialize();
 		
-		speedlog = new BufferedWriter(new FileWriter(OutputPath + "/speedlog.txt"));
-		dspeedlog = new BufferedWriter(new FileWriter(OutputPath + "/dspeedlog.txt"));
+		//speedlog = new BufferedWriter(new FileWriter(OutputPath + "/speedlog.txt"));
+		//dspeedlog = new BufferedWriter(new FileWriter(OutputPath + "/dspeedlog.txt"));
 		
 		Timestamp one_min_after_lastTime = new Timestamp(0);
 
@@ -385,8 +395,8 @@ public class RTProcess2 {
 						currentSketch.observe(t);
 						
 						///////// write speed
-						final Pair speed = currentSketch.zeroOrder.get(t);
-						speedLogWrite(t, speed.v, speed.a);
+						//final Pair speed = currentSketch.zeroOrder.get(t);
+						//speedLogWrite(t, speed.v, speed.a);
 
 						
 						/////// for difference
@@ -409,10 +419,10 @@ public class RTProcess2 {
 								estimator = new Estimator(sketch1, sketch2, oneday_before_t);
 								
 								final Pair pair = estimator.zeroOrderDiff(currentSketch);
-								dspeedLogWrite(t, pair.v, pair.a);
+								//dspeedLogWrite(t, pair.v, pair.a);
 								
 								if(t.after(one_min_after_lastTime) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
-									saveSketch(currentSketch);
+									putSketch(currentSketch);
 									one_min_after_lastTime = new Timestamp(t.getTime() + 60000);
 								}
 							} catch (Exception e) {
@@ -488,8 +498,8 @@ public class RTProcess2 {
 			resetConnection();
 		}
 		
-		speedlog.close();
-		dspeedlog.close();
+		//speedlog.close();
+		//dspeedlog.close();
 		
 	}
 	
@@ -518,121 +528,37 @@ public class RTProcess2 {
 
 	}
 	
-	private void saveSketch(Sketch sketch) throws Exception{
-		if(sketch == null)
-			sketch = sketchQueue[(tail-1) % MAX_QUEUE_SIZE];
-		Timestamp currentTime = sketch.getTime();
-		String dir = currentTime.toString();
-		dir = dir.replace(" ", "_").replace("-", "_").replace(":", "_").replace(".", "_");
-		dir = OutputPath + "/sketch/" + dir;
-		new File(dir).mkdir();
-		
-		
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter(dir + "/zeroOrder.txt"));
-			out.write(OutputSketch.outputZeroOrder(sketch));
-			out.close();
-			
-			String[] firstOrderA = OutputSketch.outputFirstOrderA(sketch);
-			String[] firstOrderV = OutputSketch.outputFirstOrderV(sketch);
-			String[] secondOrderA = OutputSketch.outputSecondOrderA(sketch);
-			String[] secondOrderV = OutputSketch.outputSecondOrderV(sketch);
-			for(int h = 0; h < H; h ++){
-				out = new BufferedWriter(new FileWriter(dir + "/firstOrderA_" + h + ".txt"));
-				out.write(firstOrderA[h]);
-				out.close();
-				
-				out = new BufferedWriter(new FileWriter(dir + "/firstOrderV_" + h + ".txt"));
-				out.write(firstOrderV[h]);
-				out.close();
-				
-				out = new BufferedWriter(new FileWriter(dir + "/secondOrderA_" + h + ".txt"));
-				out.write(secondOrderA[h]);
-				out.close();
-				
-				out = new BufferedWriter(new FileWriter(dir + "/secondOrderV_" + h + ".txt"));
-				out.write(secondOrderV[h]);
-				out.close();
-				
-					
-			}
-			
-			//trackFirstOrder(dir);
-			saveActiveTerms(dir);
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}	
-		
-		saveSketchDiff(dir, sketch);
-		
-	}
-	
-	
-	private void saveSketchDiff(String dir, Sketch sketch) throws Exception{
+	private void putSketch(Sketch sketch) throws Exception{
 		Timestamp t = sketch.getTime();
 		t = new Timestamp(t.getTime() - CYCLE * 60 * 1000);
-		
+
 		int index = head;
 		Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
-		while(sketch2.getTime().before(t)){
-			index ++;
+		while (sketch2.getTime().before(t)) {
+			index++;
 			sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
 		}
-		
+
 		Sketch sketch1 = sketchQueue[(index - 1) % MAX_QUEUE_SIZE];
-		
+
 		Estimator estimator = new Estimator(sketch1, sketch2, t);
-		
-		
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter(dir + "/diff_zeroOrder.txt"));
-			out.write(OutputSketch.outputZeroOrder(estimator.zeroOrderDiff(sketch)));
-			out.close();
+
+		InferenceUnit unit = new InferenceUnit();
+
+		unit.currentTime = sketch.getTime();
+		unit.zeroOrderDiff = estimator.zeroOrderDiff(sketch);
+		unit.firstOrderDiff = estimator.firstOrderDiff(sketch);
+		unit.secondOrderDiff = estimator.secondOrderDiff(sketch);
+
+		unit.activeTerms = new LinkedList<String>();
+		for(String term : activeTerms.activeTerms()){
+			unit.activeTerms.add(term);
+		}
 			
-			String[] firstOrderA = OutputSketch.outputFirstOrderA(estimator.firstOrderDiff(sketch));
-			String[] firstOrderV = OutputSketch.outputFirstOrderV(estimator.firstOrderDiff(sketch));
-			String[] secondOrderA = OutputSketch.outputSecondOrderA(estimator.secondOrderDiff(sketch));
-			String[] secondOrderV = OutputSketch.outputSecondOrderV(estimator.secondOrderDiff(sketch));
-			for(int h = 0; h < H; h ++){
-				out = new BufferedWriter(new FileWriter(dir + "/diff_firstOrderA_" + h + ".txt"));
-				out.write(firstOrderA[h]);
-				out.close();
-				
-				out = new BufferedWriter(new FileWriter(dir + "/diff_firstOrderV_" + h + ".txt"));
-				out.write(firstOrderV[h]);
-				out.close();
-				
-				out = new BufferedWriter(new FileWriter(dir + "/diff_secondOrderA_" + h + ".txt"));
-				out.write(secondOrderA[h]);
-				out.close();
-				
-				out = new BufferedWriter(new FileWriter(dir + "/diff_secondOrderV_" + h + ".txt"));
-				out.write(secondOrderV[h]);
-				out.close();
-				
-					
-			}
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}	
+		queue.put(unit);
 	}
 	
-	private void saveActiveTerms(String dir){
-		BufferedWriter out;
-		try {
-			out = new BufferedWriter(new FileWriter(dir + "/actives.txt"));
-			Set<String> terms = activeTerms.activeTerms();
-			for(String term : terms){
-				out.write(term + "\n");
-			}
-			out.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-	}
+
 	
 	private void trackFirstOrder(String dir){
 		BufferedWriter out_V, out_A;
@@ -663,22 +589,25 @@ public class RTProcess2 {
 		}
 		
 	}
-	
+
+	/*
 	private void speedLogWrite(Timestamp t, double v, double a) {
 		try {
 			speedlog.write(t + "\t" + v + "\t" + a + "\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	}*/
 	
+	
+	/*
 	private void dspeedLogWrite(Timestamp t, double v, double a) {
 		try {
 			dspeedlog.write(t + "\t" + v + "\t" + a + "\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	}*/
 	
 	private static String decode(String tweet){
 		return org.apache.commons.lang.StringEscapeUtils.unescapeHtml(tweet);
