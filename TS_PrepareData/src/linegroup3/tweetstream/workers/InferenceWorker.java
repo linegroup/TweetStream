@@ -14,6 +14,7 @@ import java.util.concurrent.Semaphore;
 
 import linegroup3.tweetstream.event.Burst;
 import linegroup3.tweetstream.event.BurstCompare;
+import linegroup3.tweetstream.event.DBAgent;
 import linegroup3.tweetstream.event.OnlineEvent;
 import linegroup3.tweetstream.postprocess.TopicFilter;
 import linegroup3.tweetstream.postprocess.ValueTermPair;
@@ -67,7 +68,22 @@ public class InferenceWorker implements Runnable {
 		
 	List<OnlineEvent> events = new LinkedList<OnlineEvent>();
 	
-
+	private void flush(Timestamp t){
+		Timestamp deadline = new Timestamp(t.getTime() - BurstCompare.T_GAP);
+		
+		List<OnlineEvent> ret = new LinkedList<OnlineEvent>();
+		
+		for(OnlineEvent event : events){
+			if(event.getEnd().before(deadline)){
+				System.out.println(event);
+				//DBAgent.save(event);
+			}else{
+				ret.add(event);
+			}
+		}	
+		
+		events = ret;
+	}
 	
 	private void infer(InferenceUnit unit){	
 		Fscore fs0 = new Fscore();
@@ -113,14 +129,15 @@ public class InferenceWorker implements Runnable {
 		//System.out.println(path + "\t" + ct + "\t" + fs0.F1 + "\t" + fs0.F4 + "\t" + fs0.F + "\t" + fs1.F1 + "\t" + fs1.F4 + "\t" + fs1.F +
 		//		"\t" + (fs1.F1/fs0.F1) + "\t" + (fs1.F4/fs0.F4) + "\t" + (fs1.F/fs0.F));
 			
-
-			String dateStr = unit.currentTime.toString();
+			Timestamp t = unit.currentTime;
+			String dateStr = t.toString();
 			
 			System.out.println(dateStr + "\t" + ct/1000.0 + "s\t" + (fs1.F/fs0.F));
 		
 			List<Burst> bursts = new LinkedList<Burst>();
 			analyse(Timestamp.valueOf(dateStr), (fs1.F/fs0.F), bursts);
 			
+			flush(t);
 			BurstCompare.join(events, bursts);
 		
 

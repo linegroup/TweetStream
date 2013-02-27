@@ -9,7 +9,7 @@ public class BurstCompare {
 	static private final double SIMILARITY_THRESHOLD = 0.01;
 	static private final double JOIN_THRESHOLD = 0.0025;
 	static public final double MIN_SUPPORT = 0.025;
-	static private final long T_GAP = 60 * 60 * 1000; // 1 hour
+	static public final long T_GAP = 60 * 60 * 1000; // 1 hour
 
 
 	static private List<Burst> merge(List<Burst> bursts){
