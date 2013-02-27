@@ -84,7 +84,7 @@ public class RTProcess2 {
 //	static private BufferedWriter speedlog = null;
 //	static private BufferedWriter dspeedlog = null;
 	
-	static final String OutputPath = "./data";
+	//static final String OutputPath = "./data";
 		
 	
 	private static void resetConnection(){
@@ -141,7 +141,7 @@ public class RTProcess2 {
 	private Sketch currentSketch = null;
 	
 	
-	private BlockingQueue<InferenceUnit> queue = new SynchronousQueue<InferenceUnit>();
+	private BlockingQueue<InferenceUnit> queue = new SynchronousQueue<InferenceUnit>(true);
 	
 	public void runTime(Timestamp start, Timestamp end, Timestamp dt) throws IOException{	
 		InferenceWorker inferWorker = new InferenceWorker(queue);
