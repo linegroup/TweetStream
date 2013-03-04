@@ -1,7 +1,6 @@
 package linegroup3.tweetstream.rt2;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
@@ -14,13 +13,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.SynchronousQueue;
 
 import org.json.JSONArray;
 
@@ -29,7 +27,6 @@ import cmu.arktweetnlp.Twokenize;
 
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.sket.Estimator;
-import linegroup3.tweetstream.rt2.sket.OutputSketch;
 import linegroup3.tweetstream.rt2.sket.Pair;
 import linegroup3.tweetstream.rt2.sket.Sketch;
 import linegroup3.tweetstream.workers.InferenceUnit;
@@ -141,7 +138,7 @@ public class RTProcess2 {
 	private Sketch currentSketch = null;
 	
 	
-	private BlockingQueue<InferenceUnit> queue = new SynchronousQueue<InferenceUnit>(true);
+	private BlockingQueue<InferenceUnit> queue = new LinkedBlockingQueue<InferenceUnit>();
 	
 	public void runTime(Timestamp start, Timestamp end, Timestamp dt) throws IOException{	
 		InferenceWorker inferWorker = new InferenceWorker(queue);
