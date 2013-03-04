@@ -73,11 +73,12 @@ public class HashFamily {
 			System.out.println("" + a[i] + "\t" + b[i]);
 		}
 	}*/
+	private static int N = 200;
 	
 	public static int hash(int fun, int i) { // return 0~199 fun 0~4
 		//long ret = ((b[fun] + i*a[fun]) % P ) % 200 ;
 		long ret = (b[fun] + i*a[fun]);		
-		ret = (ret % P) % 200;
+		ret = (ret % P) % N;
 		return (int)ret;
 		
 	}
@@ -87,7 +88,7 @@ public class HashFamily {
 		
 		//long ret = ((b[fun] + i*a[fun]) % P ) % 200 ;
 		long ret = (b[fun] + i*a[fun]);		
-		ret = (ret % P) % 200;
+		ret = (ret % P) % N;
 		return (int)ret;
 		
 	}
