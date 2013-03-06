@@ -50,6 +50,12 @@ public class BufferManager implements Runnable {
 		
 		while(true){
 			write();
+			
+			try {
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -120,7 +126,7 @@ public class BufferManager implements Runnable {
 	
 
 	
-	private int DELAY = 5; // process the tweets DELAY minutes ago in buffer
+	private int DELAY = 2; // process the tweets DELAY minutes ago in buffer
 	
 	private int INTERVAL = 1; // process every INTERVAL minute(s)
 	
