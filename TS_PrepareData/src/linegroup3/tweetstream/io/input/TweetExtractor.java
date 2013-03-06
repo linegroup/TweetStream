@@ -14,7 +14,7 @@ public class TweetExtractor {
 	public static Timestamp getTime(JSONObject tweet) throws ParseException, JSONException{
 		DateFormat utcDf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		utcDf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		Timestamp t = new Timestamp(utcDf.parse(tweet.getString("publishedTimeGMTStr")).getTime());
+		Timestamp t = new Timestamp(utcDf.parse(tweet.getString("publishedTimeGmtStr")).getTime());
 		return t;
 	}
 	
