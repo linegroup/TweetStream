@@ -21,10 +21,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
+
+import twitter4j.internal.org.json.JSONException;
 
 
 import cmu.arktweetnlp.Twokenize;
 
+import linegroup3.tweetstream.io.input.BufferManager;
+import linegroup3.tweetstream.io.input.FilterTweet;
+import linegroup3.tweetstream.io.input.TweetExtractor;
+import linegroup3.tweetstream.postprocess.TokenizeTweet;
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.sket.Estimator;
 import linegroup3.tweetstream.rt2.sket.Pair;
@@ -36,82 +43,10 @@ import linegroup3.tweetstream.workers.InferenceWorker;
 public class RTProcess2 {
 	static final long oneDayLong = 24 * 60 * 60 * 1000; // (ms)
 	
-	/////// SET H & K HERE !!!
+	/////// SET H & N HERE !!!
 	static final int H = 5;
 	static final int N = 200;
-
-	static private Connection conn = null;
-	
-	static {
-		try {
-			conn = DriverManager
-					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
-							+ "user=root&password=123583");
-
-		} catch (SQLException ex) {
-			// handle any errors
-			System.out.println("SQLException: " + ex.getMessage());
-			System.out.println("SQLState: " + ex.getSQLState());
-			System.out.println("VendorError: " + ex.getErrorCode());
-
-			conn = null;
-
-		}
-	}
-	
-	/*
-	static private Connection connForLog = null;
-	
-	static {
-		try {
-			connForLog = DriverManager
-					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
-							+ "user=root&password=123583");
-
-		} catch (SQLException ex) {
-			// handle any errors
-			System.out.println("SQLException: " + ex.getMessage());
-			System.out.println("SQLState: " + ex.getSQLState());
-			System.out.println("VendorError: " + ex.getErrorCode());
-
-			connForLog = null;
-
-		}
-	}*/
-//	static private BufferedWriter speedlog = null;
-//	static private BufferedWriter dspeedlog = null;
-	
-	//static final String OutputPath = "./data";
 		
-	
-	private static void resetConnection(){
-		try {
-			conn.close();
-		} catch (SQLException ex) {
-			// handle any errors
-			System.out.println("SQLException: " + ex.getMessage());
-			System.out.println("SQLState: " + ex.getSQLState());
-			System.out.println("VendorError: " + ex.getErrorCode());
-
-			conn = null;
-
-		}
-		try {
-			conn = DriverManager
-					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
-							+ "user=root&password=123583");
-
-		} catch (SQLException ex) {
-			// handle any errors
-			System.out.println("SQLException: " + ex.getMessage());
-			System.out.println("SQLState: " + ex.getSQLState());
-			System.out.println("VendorError: " + ex.getErrorCode());
-
-			conn = null;
-
-		}
-	}
-	
 	private Timestamp DETECT_T = null;
 	private static final double THRESHOLD_D_V = 1.0;
 	private static final double THRESHOLD_D_A = 10 * 2.0; // is the same as before 2.0
@@ -120,9 +55,9 @@ public class RTProcess2 {
 	private static final int THREAD_POOL_SIZE = 2 * H;
 	private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 	
-	private int LAG = 5; // Largest lag :  5 minutes
-	private int CYCLE = 24*60;
-	private int MAX_QUEUE_SIZE = CYCLE + LAG; // unit: minute (one day)
+	private int CYCLE = 24*60; // minutes
+	private int INTERVAL = 10; // minutes
+	private int MAX_QUEUE_SIZE = (CYCLE / INTERVAL) + 1; // interval(s)
 	private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
 	private int head = 0;
 	private int tail = 0;
@@ -138,366 +73,262 @@ public class RTProcess2 {
 	private Sketch currentSketch = null;
 	
 	
-	private BlockingQueue<InferenceUnit> queue = new LinkedBlockingQueue<InferenceUnit>();
+	private BlockingQueue<InferenceUnit> queueInference = new LinkedBlockingQueue<InferenceUnit>(25);
+	private BlockingQueue<List<JSONObject>> queueTweets = new LinkedBlockingQueue<List<JSONObject>>(25);
 	
-	public void runTime(Timestamp start, Timestamp end, Timestamp dt) throws IOException{	
-		InferenceWorker inferWorker = new InferenceWorker(queue);
+	public void runTime(Timestamp dt) {
+
+		InferenceWorker inferWorker = new InferenceWorker(queueInference);
 		new Thread(inferWorker).start();
-		
-		DETECT_T= dt;
+
+		BufferManager bufManager = new BufferManager();
+		bufManager.setQueue(queueTweets);
+		bufManager.setFilter(new FilterTweet(){
+			@Override
+			public boolean filterOut(JSONObject tweet) {
+				try {
+					String content = TweetExtractor.getContent(tweet);
+					if(content.startsWith("RT @")){
+						return true;
+					}			
+				} catch (org.json.JSONException e) {
+					e.printStackTrace();
+				}
+				return false;
+			}});
+		new Thread(bufManager).start();
+
+		DETECT_T = dt;
 		StopWords.initialize();
-		
-		//speedlog = new BufferedWriter(new FileWriter(OutputPath + "/speedlog.txt"));
-		//dspeedlog = new BufferedWriter(new FileWriter(OutputPath + "/dspeedlog.txt"));
-		
+
 		Timestamp one_min_after_lastTime = new Timestamp(0);
 
-		Timestamp next = new Timestamp(start.getTime()+oneDayLong);
-				
-		currentSketch = new Sketch();	
-		
+		currentSketch = new Sketch();
+
 		final Semaphore taskFinished = new Semaphore(0);
 
-		while(start.before(end)){
-			System.out.println(new Timestamp(System.currentTimeMillis()) + "\tProcessing : " + start);  // print info
-			
-			Statement stmt = null;
-			ResultSet rs = null;
+		while (true) {
+
+			List<JSONObject> tweets = null;
 			try {
-				stmt = conn.createStatement();
-				String sqlTxt = "select *  from tokenized_newstream3_withoutRT where t >= \'" + start + "\' and t < \'" + next +"\' order by t";
-				if (stmt.execute(sqlTxt)) {
-					
-					rs = stmt.getResultSet();
-					while (rs.next()) {
-						/// debug
-						///long debug_T = System.currentTimeMillis();
-						/////////////////////////////////
-												
-						final Timestamp t = rs.getTimestamp("t");
-						/*
-						String tweet = rs.getString("tweet");
-						
-						tweet = decode(tweet);
-						tweet = downcase(tweet);
-						List<String> terms = tokenize(tweet);
-						*/
-						String tweet = rs.getString("tweet");
-						
-						List<String> terms = new LinkedList<String>();
-						
-						
-						try {
-							JSONArray array = new JSONArray(tweet);
-							for (int k = 0; k < array.length(); k++) {
-								terms.add(array.getString(k));
-							}
-						} catch (org.json.JSONException je) {
-							je.printStackTrace();
-							continue;
-						}
+				tweets = queueTweets.take();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			
+			if(tweets == null)	continue;
+			
+			System.out.println("got " + tweets.size() + " tweets.");
 
-						
-						List<String> finalTerms = new LinkedList<String>();
-						for(String term : terms){
-							if(!StopWords.isStopWord(term)){
-								finalTerms.add(term);
-								activeTerms.active(term, t);
-							}		
+			for (JSONObject tweet : tweets) {
+				try {
+
+					final Timestamp t = TweetExtractor.getTime(tweet);
+
+					String content = TweetExtractor.getContent(tweet);
+
+					List<String> terms = TokenizeTweet.tokenizeTweet(content);
+
+					List<String> finalTerms = new LinkedList<String>();
+					for (String term : terms) {
+						if (!StopWords.isStopWord(term)) {
+							finalTerms.add(term);
+							activeTerms.active(term, t);
 						}
-						
-						////// counting
-						/*
-						double l = 0; 
-						ArrayList<TreeMap<Integer, Integer>> counter = new ArrayList<TreeMap<Integer, Integer>>(H);
-						for(int h = 0; h < H; h ++){
-							counter.add(new TreeMap<Integer, Integer>());
-						}
-						String[] res = tweet.split(",");
-						for(String term : res){
-							if(term.length() >= 1){
-								int id = Integer.parseInt(term);
-								
-								if(StopWords.isStopWord(id))	continue;
-								
-								activeTerms.active(id, t);
-								
-								for(int h = 0; h < H; h ++){
-									int bucket = HashFamily.hash(h, id);
-									
-									Integer count = counter.get(h).get(bucket);
-									if(count == null){
-										counter.get(h).put(bucket, 1);
-									}else{
-										counter.get(h).put(bucket, count + 1);
-									}
+					}
+
+					double l = 0;
+					ArrayList<TreeMap<Integer, Integer>> counter = new ArrayList<TreeMap<Integer, Integer>>(
+							H);
+					for (int h = 0; h < H; h++) {
+						counter.add(new TreeMap<Integer, Integer>());
+					}
+
+					for (String term : finalTerms) {
+						if (term.length() >= 1) {
+
+							for (int h = 0; h < H; h++) {
+								int bucket = HashFamily.hash(h, term);
+
+								Integer count = counter.get(h).get(bucket);
+								if (count == null) {
+									counter.get(h).put(bucket, 1);
+								} else {
+									counter.get(h).put(bucket, count + 1);
 								}
-								
-								l ++;
 							}
+
+							l++;
 						}
-						
-						if(l <= 1){
-							/////////////////////////////// for debug
-							//System.out.print("L i s less than 2!!!!!!!");
-							//System.out.println(rs.getString("status_ID"));
-							continue;
-						}*/
-						
-						double l = 0; 
-						ArrayList<TreeMap<Integer, Integer>> counter = new ArrayList<TreeMap<Integer, Integer>>(H);
-						for(int h = 0; h < H; h ++){
-							counter.add(new TreeMap<Integer, Integer>());
-						}
-						
-						for(String term : finalTerms){
-							if(term.length() >= 1){
-															
-								for(int h = 0; h < H; h ++){
-									int bucket = HashFamily.hash(h, term);
-									
-									Integer count = counter.get(h).get(bucket);
-									if(count == null){
-										counter.get(h).put(bucket, 1);
-									}else{
-										counter.get(h).put(bucket, count + 1);
-									}
+					}
+
+					if (l <= 1) {
+						continue;
+					}
+
+					// //////////////////////////////////////////////
+
+					double ds = 0;
+					// //// for zero order
+
+					ds = 1;
+					currentSketch.zeroOrderPulse(t, ds);
+
+					// //// for first order
+					for (int h = 0; h < H; h++) {
+						final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
+						final int f_h = h;
+						final double f_l = l;
+
+						pool.execute(new Runnable() {
+
+							@Override
+							public void run() {
+								for (Map.Entry<Integer, Integer> entry : f_counter
+										.get(f_h).entrySet()) {
+									int bucket = entry.getKey();
+									int count = entry.getValue();
+
+									double ds = count / f_l;
+
+									currentSketch.firstOrderPulse(t, ds, f_h,
+											bucket);
 								}
-								
-								l ++;
+
+								taskFinished.release();
 							}
-						}
-						
-						if(l <= 1){
-							continue;
-						}
-						
-						////////////////////////////////////////////////
-						
-						double ds = 0;
-						////// for zero order
-						
-						ds = 1;
-						currentSketch.zeroOrderPulse(t, ds);
 
+						});
 
-						////// for first order
-						for (int h = 0; h < H; h++) {
-							final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
-							final int f_h = h;
-							final double f_l = l;
-							
-							pool.execute(new Runnable(){
+					}
 
-								@Override
-								public void run() {
-									for (Map.Entry<Integer, Integer> entry : f_counter
+					// //// for second order
+					for (int h = 0; h < H; h++) {
+						final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
+						final int f_h = h;
+						final double f_l = l;
+
+						pool.execute(new Runnable() {
+
+							@Override
+							public void run() {
+								for (Map.Entry<Integer, Integer> entry_i : f_counter
+										.get(f_h).entrySet()) {
+									int bucket_i = entry_i.getKey();
+									int count_i = entry_i.getValue();
+
+									for (Map.Entry<Integer, Integer> entry_j : f_counter
 											.get(f_h).entrySet()) {
-										int bucket = entry.getKey();
-										int count = entry.getValue();
-										
-										double ds = count / f_l;
-										
-										currentSketch.firstOrderPulse(t, ds, f_h, bucket);								
-									}
-									
-									taskFinished.release();
-								}
-								
-							});
-							/*
-							for (Map.Entry<Integer, Integer> entry : counter
-									.get(h).entrySet()) {
-								int bucket = entry.getKey();
-								int count = entry.getValue();
+										int bucket_j = entry_j.getKey();
+										int count_j = entry_j.getValue();
 
-								ds = count / l;
-								
-								currentSketch.firstOrderPulse(t, ds, h, bucket);								
-							}
-							*/
-						}
-					
-						
-						////// for second order
-						for (int h = 0; h < H; h++) {
-							final ArrayList<TreeMap<Integer, Integer>> f_counter = counter;
-							final int f_h = h;
-							final double f_l = l;
-							
-							pool.execute(new Runnable(){
+										double ds = 0;
 
-								@Override
-								public void run() {
-									for (Map.Entry<Integer, Integer> entry_i : f_counter.get(f_h).entrySet()) {
-										int bucket_i = entry_i.getKey();
-										int count_i = entry_i.getValue();
-										
-										for(Map.Entry<Integer, Integer> entry_j : f_counter.get(f_h).entrySet()) {
-											int bucket_j = entry_j.getKey();
-											int count_j = entry_j.getValue();
-											
-											double ds = 0;
-											
-											if(bucket_i == bucket_j){
-												ds = count_i*(count_i-1);		
-											}else{
-												ds = count_i*count_j;
-											}
-											ds /= f_l*(f_l-1);
-											
-											currentSketch.secondOrderPulse(t, ds, f_h, bucket_i, bucket_j);
-											
+										if (bucket_i == bucket_j) {
+											ds = count_i * (count_i - 1);
+										} else {
+											ds = count_i * count_j;
 										}
-										
+										ds /= f_l * (f_l - 1);
+
+										currentSketch.secondOrderPulse(t, ds,
+												f_h, bucket_i, bucket_j);
+
 									}
-									
-									taskFinished.release();
+
 								}
-								
-							});
-							
-							/*
-							for (Map.Entry<Integer, Integer> entry_i : counter.get(h).entrySet()) {
-								int bucket_i = entry_i.getKey();
-								int count_i = entry_i.getValue();
-								
-								for(Map.Entry<Integer, Integer> entry_j : counter.get(h).entrySet()) {
-									int bucket_j = entry_j.getKey();
-									int count_j = entry_j.getValue();
-																		
-									if(bucket_i == bucket_j){
-										ds = count_i*(count_i-1);		
-									}else{
-										ds = count_i*count_j;
-									}
-									ds /= l*(l-1);
-									
-									currentSketch.secondOrderPulse(t,ds, h, bucket_i, bucket_j);
-									
-								}
-								
+
+								taskFinished.release();
 							}
-							*/
-						}	
-						
-						/////////// synchronize
+
+						});
+
+					}
+
+					// ///////// synchronize
+					try {
+						taskFinished.acquire(2 * H);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					// //////////////// change observing time //////////////
+					currentSketch.observe(t);
+
+					// /////// write speed
+					// final Pair speed = currentSketch.zeroOrder.get(t);
+					// speedLogWrite(t, speed.v, speed.a);
+
+					// ///// for difference
+					if (t.after(DETECT_T)) {
+						Timestamp oneday_before_t = new Timestamp(t.getTime()
+								- CYCLE * 60 * 1000);
+
+						int index = head;
+						Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
+						while (sketch2.getTime().before(oneday_before_t)) {
+							index++;
+							sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
+						}
+
+						Sketch sketch1 = sketchQueue[(index - 1)
+								% MAX_QUEUE_SIZE];
+
+						Estimator estimator;
 						try {
-							taskFinished.acquire(2*H);
-						} catch (InterruptedException e) {
+							estimator = new Estimator(sketch1, sketch2,
+									oneday_before_t);
+
+							final Pair pair = estimator
+									.zeroOrderDiff(currentSketch);
+							// dspeedLogWrite(t, pair.v, pair.a);
+
+							if (t.after(one_min_after_lastTime)
+									&& pair.a >= THRESHOLD_D_A
+									&& pair.v >= THRESHOLD_D_V) {
+								putSketch(currentSketch);
+								one_min_after_lastTime = new Timestamp(
+										t.getTime() + 60000);
+							}
+						} catch (Exception e) {
 							e.printStackTrace();
 						}
-						
-						////////////////// change observing time //////////////
-						currentSketch.observe(t);
-						
-						///////// write speed
-						//final Pair speed = currentSketch.zeroOrder.get(t);
-						//speedLogWrite(t, speed.v, speed.a);
 
-						
-						/////// for difference
-						if(t.after(DETECT_T))
-						{
-							Timestamp oneday_before_t = new Timestamp(t.getTime() - CYCLE * 60 * 1000);
-					
-							
-							int index = head;
-							Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
-							while(sketch2.getTime().before(oneday_before_t)){
-								index ++;
-								sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
-							}
-							
-							Sketch sketch1 = sketchQueue[(index - 1) % MAX_QUEUE_SIZE];
-							
-							Estimator estimator;
-							try {
-								estimator = new Estimator(sketch1, sketch2, oneday_before_t);
-								
-								final Pair pair = estimator.zeroOrderDiff(currentSketch);
-								//dspeedLogWrite(t, pair.v, pair.a);
-								
-								if(t.after(one_min_after_lastTime) && pair.a >= THRESHOLD_D_A && pair.v >= THRESHOLD_D_V){
-									putSketch(currentSketch);
-									one_min_after_lastTime = new Timestamp(t.getTime() + 60000);
-								}
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-							
-						}
-						
-						
-						/////// cache snapshot
-						final long oneMinute = 60 * 1000;
-						
-						Timestamp lastone = null;
-						if(head == tail){
-							currentSketch.copy(sketchQueue[tail]);
-							tail ++;
-						}else{
-							int index = (tail - 1) % MAX_QUEUE_SIZE;
-							Sketch lastSketch = sketchQueue[index];
-							lastone = lastSketch.getTime();
-							if(t.getTime() == lastone.getTime()){
-								currentSketch.copy(sketchQueue[index]);
-							}
-							if(t.getTime() - lastone.getTime() >= oneMinute){
-								if(tail - head == MAX_QUEUE_SIZE){
-									head ++;
-								}
-								currentSketch.copy(sketchQueue[tail % MAX_QUEUE_SIZE]);
-								tail ++;
-							}
-						}
-						
-						/// debug
-						///System.out.println(System.currentTimeMillis() - debug_T);
-						///////////
-						
 					}
-	
-				}
-				
-				
 
-			} catch (SQLException ex) {
-				// handle any errors
-				System.out.println("SQLException: " + ex.getMessage());
-				System.out.println("SQLState: " + ex.getSQLState());
-				System.out.println("VendorError: " + ex.getErrorCode());
+					// ///// cache snapshot
+					final long oneMinute = 60 * 1000;
 
-			} finally {
-				// it is a good idea to release
-				// resources in a finally{} block
-				// in reverse-order of their creation
-				// if they are no-longer needed
-				if (rs != null) {
-					try {
-						rs.close();
-					} catch (SQLException sqlEx) {
-					} // ignore
-					rs = null;
+					Timestamp lastone = null;
+					if (head == tail) {
+						currentSketch.copy(sketchQueue[tail]);
+						tail++;
+					} else {
+						int index = (tail - 1) % MAX_QUEUE_SIZE;
+						Sketch lastSketch = sketchQueue[index];
+						lastone = lastSketch.getTime();
+						if (t.getTime() == lastone.getTime()) {
+							currentSketch.copy(sketchQueue[index]);
+						}
+						if (t.getTime() - lastone.getTime() >= INTERVAL
+								* oneMinute) {
+							if (tail - head == MAX_QUEUE_SIZE) {
+								head++;
+							}
+							currentSketch.copy(sketchQueue[tail
+									% MAX_QUEUE_SIZE]);
+							tail++;
+						}
+					}
+
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				if (stmt != null) {
-					try {
-						stmt.close();
-					} catch (SQLException sqlEx) {
-					} // ignore
-					stmt = null;
-				}
+
 			}
-						
-			start = next;
-			next = new Timestamp(start.getTime()+oneDayLong);
-			
-			resetConnection();
+
 		}
-		
-		//speedlog.close();
-		//dspeedlog.close();
-		
+
 	}
 	
 	
@@ -552,7 +383,7 @@ public class RTProcess2 {
 			unit.activeTerms.add(term);
 		}
 			
-		queue.put(unit);
+		queueInference.put(unit);
 	}
 	
 
@@ -587,52 +418,7 @@ public class RTProcess2 {
 		
 	}
 
-	/*
-	private void speedLogWrite(Timestamp t, double v, double a) {
-		try {
-			speedlog.write(t + "\t" + v + "\t" + a + "\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}*/
 	
-	
-	/*
-	private void dspeedLogWrite(Timestamp t, double v, double a) {
-		try {
-			dspeedlog.write(t + "\t" + v + "\t" + a + "\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}*/
-	
-	private static String decode(String tweet){
-		return org.apache.commons.lang.StringEscapeUtils.unescapeHtml(tweet);
-	}
-	
-	private static String downcase(String tweet) {
-		return tweet.toLowerCase();
-	}
-	
-	private List<String> tokenize(String tweet) {
-		List<String> ret = new LinkedList<String>();
-		
-		String str = tweet;
-		str = str.replaceAll("\\.{10,}+", " ");
-		List<String> terms = Twokenize.tokenize(str);
 
-		
-		final String regex = "\\p{Punct}+";
-		for (String term : terms) {
-			if (term.length() > 0 && term.length() <= 64
-					&& !term.matches(regex)) {
-				ret.add(term);
-			}
-		}
-		
-
-		return ret;
-
-	}
 	
 }
