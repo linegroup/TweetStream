@@ -34,6 +34,8 @@ import linegroup3.tweetstream.io.input.Fetcher;
 import linegroup3.tweetstream.io.input.FetcherMS;
 import linegroup3.tweetstream.io.input.FilterTweet;
 import linegroup3.tweetstream.io.input.TweetExtractor;
+import linegroup3.tweetstream.io.output.CacheAgent;
+import linegroup3.tweetstream.io.output.RedisCache;
 import linegroup3.tweetstream.postprocess.TokenizeTweet;
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.sket.Estimator;
@@ -100,6 +102,8 @@ public class RTProcess2 {
 				return false;
 			}});
 		new Thread(bufManager).start();*/
+		
+		CacheAgent.set(new RedisCache(new FetcherMS()));
 		
 		new Thread(new Runnable(){
 
