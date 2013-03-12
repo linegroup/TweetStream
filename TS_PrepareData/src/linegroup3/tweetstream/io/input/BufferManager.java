@@ -15,7 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class BufferManager implements Runnable {
+public class BufferManager implements Runnable, ReadTweets {
 	
 	public BufferManager(){
 		setFetcher(new Fetcher());
@@ -80,6 +80,47 @@ public class BufferManager implements Runnable {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	@Override
+	public List<JSONObject> read(Timestamp t, int minutes) { // (start, end]
+		final Timestamp start = new Timestamp(t.getTime() - minutes * 60 * 1000);
+		final Timestamp end = new Timestamp(t.getTime());
+		final TreeMap<Timestamp, List<JSONObject>> map = new TreeMap<Timestamp, List<JSONObject>>();
+		
+		buffer.scan(new ProcessObject(){
+
+			@Override
+			public void process(JSONObject tweet) {
+				try {
+					Timestamp t = TweetExtractor.getTime(tweet);
+					if(t.after(start) && !t.after(end)){
+						if(!filter.filterOut(tweet)){
+							
+							List<JSONObject> list = map.get(t);
+							if(list == null){
+								list = new LinkedList<JSONObject>();
+								map.put(t, list);
+							}
+							list.add(tweet);
+						}
+					}			
+					
+				} catch (ParseException e) {
+					e.printStackTrace();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+			}
+			
+		});
+		
+		List<JSONObject> output = new LinkedList<JSONObject>();
+		for(Map.Entry<Timestamp, List<JSONObject>> entry : map.entrySet()){
+			output.addAll(entry.getValue());
+		}
+		
+		return output;
 	}
 	
 	private void read(){ // must be finished in INTERVAL minute(s)
