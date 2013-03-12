@@ -29,6 +29,9 @@ import twitter4j.internal.org.json.JSONException;
 import cmu.arktweetnlp.Twokenize;
 
 import linegroup3.tweetstream.io.input.BufferManager;
+import linegroup3.tweetstream.io.input.FetchTweets;
+import linegroup3.tweetstream.io.input.Fetcher;
+import linegroup3.tweetstream.io.input.FetcherMS;
 import linegroup3.tweetstream.io.input.FilterTweet;
 import linegroup3.tweetstream.io.input.TweetExtractor;
 import linegroup3.tweetstream.postprocess.TokenizeTweet;
@@ -49,7 +52,7 @@ public class RTProcess2 {
 		
 	private Timestamp DETECT_T = null;
 	private static final double THRESHOLD_D_V = 1.0;
-	private static final double THRESHOLD_D_A = 10 * 2.0; // is the same as before 2.0
+	private static final double THRESHOLD_D_A = 10 * 1.0; // is the same as before 1.0
 	
 	
 	private static final int THREAD_POOL_SIZE = 2 * H;
@@ -81,7 +84,7 @@ public class RTProcess2 {
 		InferenceWorker inferWorker = new InferenceWorker(queueInference);
 		new Thread(inferWorker).start();
 
-		BufferManager bufManager = new BufferManager();
+		/*BufferManager bufManager = new BufferManager();
 		bufManager.setQueue(queueTweets);
 		bufManager.setFilter(new FilterTweet(){
 			@Override
@@ -96,7 +99,21 @@ public class RTProcess2 {
 				}
 				return false;
 			}});
-		new Thread(bufManager).start();
+		new Thread(bufManager).start();*/
+		
+		new Thread(new Runnable(){
+
+			@Override
+			public void run() {
+				FetchTweets fetcher = new FetcherMS();
+				while(true){
+					try {
+						queueTweets.put(fetcher.fetch());
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}}).start();
 
 		DETECT_T = dt;
 		StopWords.initialize();
@@ -283,7 +300,7 @@ public class RTProcess2 {
 									.zeroOrderDiff(currentSketch);
 							// dspeedLogWrite(t, pair.v, pair.a);
 
-							if (t.after(one_min_after_lastTime)
+							if (!t.before(one_min_after_lastTime)
 									&& pair.a >= THRESHOLD_D_A
 									&& pair.v >= THRESHOLD_D_V) {
 								putSketch(currentSketch);
