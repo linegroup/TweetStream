@@ -120,7 +120,11 @@ public class BufferManager implements Runnable {
 			output.addAll(entry.getValue());
 		}
 		
-		queue.offer(output);
+		try {
+			queue.put(output);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 	}
 	
@@ -130,7 +134,7 @@ public class BufferManager implements Runnable {
 	
 	private int INTERVAL = 1; // process every INTERVAL minute(s)
 	
-	private Buffer buffer = new Buffer(10000);
+	private Buffer buffer = new Buffer(30000);
 	
 	private HashSet<Long> ids = new HashSet<Long>();
 	
