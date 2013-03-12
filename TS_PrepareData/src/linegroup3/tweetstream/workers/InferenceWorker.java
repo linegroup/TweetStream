@@ -16,6 +16,7 @@ import linegroup3.tweetstream.event.Burst;
 import linegroup3.tweetstream.event.BurstCompare;
 import linegroup3.tweetstream.event.DBAgent;
 import linegroup3.tweetstream.event.OnlineEvent;
+import linegroup3.tweetstream.io.output.CacheAgent;
 import linegroup3.tweetstream.postprocess.TopicFilter;
 import linegroup3.tweetstream.postprocess.ValueTermPair;
 import linegroup3.tweetstream.preparedata.HashFamily;
@@ -74,9 +75,9 @@ public class InferenceWorker implements Runnable {
 		List<OnlineEvent> ret = new LinkedList<OnlineEvent>();
 		
 		for(OnlineEvent event : events){
+			CacheAgent.get().update(event.getId(), event);
 			if(event.getEnd().before(deadline)){
-				System.out.println(event);
-				//DBAgent.save(event);
+				System.out.println("flush:\t" + event);
 			}else{
 				ret.add(event);
 			}
@@ -90,7 +91,8 @@ public class InferenceWorker implements Runnable {
 		Fscore fs1 = new Fscore();
 		
 		
-		loadV2(unit);
+		loadV(unit);
+		if(!checkAnomaly())	return;
 		initial();		
 		
 		////////////////////////////////////
@@ -137,8 +139,9 @@ public class InferenceWorker implements Runnable {
 			List<Burst> bursts = new LinkedList<Burst>();
 			analyse(Timestamp.valueOf(dateStr), (fs1.F/fs0.F), bursts);
 			
-			flush(t);
+			
 			BurstCompare.join(events, bursts);
+			flush(t);
 		
 
 		
@@ -148,7 +151,55 @@ public class InferenceWorker implements Runnable {
 		
 	}
 	
-
+	private boolean checkAnomaly(){
+		for(int i = 0; i < H; i ++){
+			double[] vector = new double[N];
+			for(int j = 0; j < N; j ++){
+				vector[j] = e[i][j];
+			}
+			if(!checkAnomaly(vector)){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private double ANOMALY_THRESHOLD = 4.0;
+	
+	private boolean checkAnomaly(double[] vector){
+		double m = mean(vector);
+		double sv = svar(vector);
+		
+		for(int i = 0; i < vector.length; i ++){
+			if((vector[i] - m) > (ANOMALY_THRESHOLD * sv)){
+				return true;
+			}
+		}
+		
+		
+		return false;
+	}
+	
+	private double mean(double[] vector){
+		int n = vector.length;
+		double s = 0.0;
+		for(int i = 0; i < n; i ++){
+			s += vector[i];
+		}
+		s /= n;
+		return s;
+	}
+	
+	private double svar(double[] vector){
+		int n = vector.length;
+		double[] vSq = new double[n];
+		for(int i = 0; i < n; i ++){
+			vSq[i] = vector[i] * vector[i];
+		}
+		double evSq = mean(vSq);
+		double ev = mean(vector);
+		return Math.sqrt(evSq - ev*ev);
+	}
 	
 	private void analyse(){
 		final int TopN = 15;
