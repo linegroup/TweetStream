@@ -14,9 +14,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import linegroup3.tweetstream.io.output.CacheAgent;
 import linegroup3.tweetstream.postprocess.ValueTermPair;
 
 public class OnlineEvent {
+	
+	private String id = null;
 	
 	private Timestamp start = null;
 	private Timestamp end = null;
@@ -24,9 +27,18 @@ public class OnlineEvent {
 
 	private Map<Timestamp, Burst> bursts = new TreeMap<Timestamp, Burst>();
 	
+	
 	public OnlineEvent(Burst burst){
+		id = CacheAgent.get().getId();
+		
 		this.start = burst.getTime();
 		add(burst);
+		
+		CacheAgent.get().put(id, this);
+	}
+	
+	public String getId(){
+		return id;
 	}
 	
 	public void add(Burst burst){// must add busts in order by time
@@ -87,7 +99,7 @@ public class OnlineEvent {
 	}
 	
 	public String toString(){
-		String ret = "[" + start + "," + end + "]\t";
+		String ret = id + "\t" + "[" + start + "," + end + "]\t";
 		for(String word : getKeywords()){
 			ret += (word + ",");
 		}
