@@ -22,20 +22,20 @@ import aek.hbasepoller.hbase.Tweet;
 //fetch tweets from mysql database 
 public class FetcherMS implements FetchTweets, ReadTweets{ 
 
-	private Timestamp start = Timestamp.valueOf("2013-01-25 00:00:00");
-	private final Timestamp end = Timestamp.valueOf("2013-02-18 00:00:00");
+	private Timestamp start = Timestamp.valueOf("2013-02-15 00:00:00");
+	private final Timestamp end = Timestamp.valueOf("2013-05-01 00:00:00");
 	
 	
 	@Override
 	public List<JSONObject> fetch() {
 		Timestamp next = new Timestamp(start.getTime() + 60 * 1000);
-		if(next.after(end)) return null;
 		List<JSONObject> ret = new LinkedList<JSONObject>();
+		if(next.after(end)) return ret;
 		Statement stmt = null;
 		ResultSet rs = null;
 		try {
 			stmt = conn.createStatement();
-			String sqlTxt = "select *  from newstream3 where t >= \'" + start + "\' and t < \'" + next +"\'" + " order by t";
+			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + next +"\'" + " order by t";
 			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
 				while (rs.next()) {
@@ -99,7 +99,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 		ResultSet rs = null;
 		try {
 			stmt = conn.createStatement();
-			String sqlTxt = "select *  from newstream3 where t >= \'" + start + "\' and t < \'" + end +"\'" + " order by t";
+			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + end +"\'" + " order by t";
 			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
 				while (rs.next()) {
