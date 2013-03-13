@@ -104,9 +104,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 				rs = stmt.getResultSet();
 				while (rs.next()) {
 					
-					String content = rs.getString("tweet");
-					if(content.startsWith("RT @")) continue;					
-					
+					String content = rs.getString("tweet");					
 					long statusId = rs.getLong("status_ID");
 					long userId = rs.getLong("user_ID");
 					Timestamp t = rs.getTimestamp("t");
