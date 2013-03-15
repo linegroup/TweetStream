@@ -17,9 +17,10 @@ public class Tweet {
 	private long publishedTimeGmt = 0;
 	private String publishedTimeGmtStr = null;
 	private String content = null;
+	private String geo = null;
 	
 	public Tweet(long statusId, long userId, long publishedTimeGmt,
-			String content) {
+			String content, String geo) {
 		super();
 		this.statusId = statusId;
 		this.userId = userId;
@@ -29,6 +30,7 @@ public class Tweet {
 		Date d = new Date();
 		d.setTime(this.publishedTimeGmt);
 		this.publishedTimeGmtStr = utcDf.format(d);
+		this.geo = geo;
 		try {
 			this.content = new String(content.getBytes("UTF-8"),"UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -55,7 +57,11 @@ public class Tweet {
 	public String getContent() {
 		return content;
 	}
-
+	
+	public String getGeo(){
+		return geo;
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -70,24 +76,18 @@ public class Tweet {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
 		Tweet other = (Tweet) obj;
 		if (content == null) {
-			if (other.content != null)
-				return false;
-		} else if (!content.equals(other.content))
-			return false;
-		if (publishedTimeGmt != other.publishedTimeGmt)
-			return false;
-		if (statusId != other.statusId)
-			return false;
-		if (userId != other.userId)
-			return false;
+			if (other.content != null) return false;
+		} 
+		else if (!content.equals(other.content)) return false;
+		if (geo != other.geo) return false;
+		if (publishedTimeGmt != other.publishedTimeGmt) return false;
+		if (statusId != other.statusId) return false;
+		if (userId != other.userId) return false;
 		return true;
 	}
 	
@@ -98,6 +98,7 @@ public class Tweet {
 		sb.append("\npublishedTimeGmt: " + publishedTimeGmt);
 		sb.append("\npublishedTimeGmtStr: " + publishedTimeGmtStr);
 		sb.append("\ncontent: " + content);
+		sb.append("\ngeo: " + geo);
 		return sb.toString();
 	}
 }

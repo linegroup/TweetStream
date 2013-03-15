@@ -36,13 +36,13 @@ public class HBaseTweetFetcher {
 	private Configuration conf = null;
 	private HTablePool pool = null;
 	private DateFormat utcDf = null;
-	private String hTableName = null;
+	private String resourceName = null;
 	private int lagMinute = 0;
 	private int intervalMinute = 0;
 	private List<Tweet> curFetch = null;
 	
-	public HBaseTweetFetcher(String hTableName, int lagMinute, int intervalMinute) throws IOException {
-		if(hTableName == null || hTableName.length() == 0) throw new IOException("Invalid table name: " + hTableName);
+	public HBaseTweetFetcher(String resourceName, int lagMinute, int intervalMinute) throws IOException {
+		if(resourceName == null || resourceName.length() == 0) throw new IOException("Invalid table name: " + resourceName);
 		if(intervalMinute < 0) throw new IOException("Interval cannot be negative.");
 		utcDf = new SimpleDateFormat(Config.getParameter("hbase_tweet_date_format"));
 		utcDf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -54,7 +54,7 @@ public class HBaseTweetFetcher {
 		// Create a new connection pool
 		pool = new HTablePool(conf, Integer.parseInt(Config.getParameter("hbase_max_connections")));
 		
-		this.hTableName = hTableName;
+		this.resourceName = resourceName;
 		this.lagMinute = lagMinute;
 		this.intervalMinute = intervalMinute;
 	}
@@ -63,7 +63,7 @@ public class HBaseTweetFetcher {
 		this.curFetch = Lists.newArrayList();
 		Date end = new Date(new Date().getTime()  - (this.lagMinute*60*1000));
 		Date start = new Date(end.getTime() - (this.intervalMinute*60*1000));
-		HTableInterface table = pool.getTable(this.hTableName);
+		HTableInterface table = pool.getTable(this.resourceName);
 		
 		// Orderly and HBaseWD stuff for generating fancy row keys.
 		StructRowKey rowKey = RowKeys.buildStructRowKey(RowKeys.tweetRowKey());
@@ -82,6 +82,8 @@ public class HBaseTweetFetcher {
 		Long userId = null;
 		Long statusId = null;
 		String content = null;
+		String geo = null;
+		long retweetCount = 0;
 		
 		for (Result cur: rs) {
 			oKey = RowKeys.keyDistributor.getOriginalKey(cur.getRow());			
@@ -93,7 +95,8 @@ public class HBaseTweetFetcher {
 			userId = (Long) keys[1];
 			statusId = (Long) keys[2];
 			content = Bytes.toString(cur.getValue(Bytes.toBytes("content"), Bytes.toBytes("content")));
-			this.curFetch.add(new Tweet(statusId, userId, publishedTimeGMT, content));
+			geo = Bytes.toString(cur.getValue(Bytes.toBytes("location"), Bytes.toBytes("geo"))); 
+			this.curFetch.add(new Tweet(statusId, userId, publishedTimeGMT, content, geo));
 		}
 		rs.close();
 		table.close();
@@ -108,7 +111,7 @@ public class HBaseTweetFetcher {
 	}
 
 	public String getHTableName(){
-		return this.hTableName;
+		return this.resourceName;
 	}
 	
 	public int getLagMinute(){
