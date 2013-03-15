@@ -21,7 +21,7 @@ public class RedisCache implements Cache {
 	
 	private Jedis jd = new Jedis(REDIS_HOST, REDIS_PORT);
 	
-	private final String KEY_EVENT_PREFIX = "twitter:sg:event:test:"; // !!!!!! test
+	private final String KEY_EVENT_PREFIX = "twitter:sg:event:online:"; // !!!!!! online
 	private final String KEY_EVENT_LATEST_ID = KEY_EVENT_PREFIX + "nextId";
 	private final String KEY_EVENT_IDS = KEY_EVENT_PREFIX + "ids";
 	private final String KEY_EVENT_TIMESTAMPS = KEY_EVENT_PREFIX + "timestamps";
