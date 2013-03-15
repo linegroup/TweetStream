@@ -63,6 +63,8 @@ public class BufferManager implements Runnable, ReadTweets {
 		
 		List<JSONObject> tweets = fetcher.fetch();
 		
+		if(tweets == null)	return;
+		
 		for(JSONObject tweet : tweets){
 			try {
 				long id = tweet.getLong("statusId");
