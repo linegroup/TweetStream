@@ -249,7 +249,7 @@ public class Main {
 		//linegroup3.tweetstream.onlinelda.Test.test();
 		
 		//new RTProcess2().runTime(Timestamp.valueOf("2011-09-25 00:00:00.0"), Timestamp.valueOf("2012-01-01 00:00:00.0"), Timestamp.valueOf("2011-09-30 23:59:59"));
-		new RTProcess2().runTime(Timestamp.valueOf("2013-01-29 00:00:00.0"));
+		new RTProcess2().runTime(null);
 	}
 	
 	/*
