@@ -20,12 +20,16 @@ public class Fetcher implements FetchTweets{
 	private static int lagMinute = 0;
 	private static int intervalMinute = 1;
 	
-	static{
+	private static void reset(){
 		try {
 			fetcher = new HBaseTweetFetcher(hTableName, lagMinute, intervalMinute);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("reset failure.");
 		}
+	}
+	
+	static{
+		reset();
 	}
 	
 	@Override
@@ -46,6 +50,7 @@ public class Fetcher implements FetchTweets{
 			
 		} catch (IOException ie) {
 			ie.printStackTrace();
+			reset();
 		} catch (JSONException je) {
 			je.printStackTrace();
 		}
