@@ -22,7 +22,7 @@ import aek.hbasepoller.hbase.Tweet;
 //fetch tweets from mysql database 
 public class FetcherMS implements FetchTweets, ReadTweets{ 
 
-	private Timestamp start = Timestamp.valueOf("2013-02-15 00:00:00");
+	private Timestamp start = Timestamp.valueOf("2013-01-25 00:00:00");
 	private final Timestamp end = Timestamp.valueOf("2013-05-01 00:00:00");
 	
 	
@@ -52,6 +52,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 			        Date date=new Date(t.getTime());
 			        String s=sdf.format(date);
 					obj.put("publishedTimeGmtStr", s);
+					obj.put("geo", rs.getString("geo"));
 					
 					ret.add(obj);
 				}
@@ -108,10 +109,10 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 					long statusId = rs.getLong("status_ID");
 					long userId = rs.getLong("user_ID");
 					Timestamp t = rs.getTimestamp("t");
+					String geo = rs.getString("geo");
 					
 					
-					
-					Tweet tObj = new Tweet(statusId, userId, t.getTime(), content);
+					Tweet tObj = new Tweet(statusId, userId, t.getTime(), content, geo);
 					
 					ret.add(new JSONObject(new Gson().toJson(tObj)));
 				}
