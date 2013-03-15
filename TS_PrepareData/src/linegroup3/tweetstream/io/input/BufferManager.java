@@ -97,7 +97,7 @@ public class BufferManager implements Runnable, ReadTweets {
 				try {
 					Timestamp t = TweetExtractor.getTime(tweet);
 					if(t.after(start) && !t.after(end)){
-						if(!filter.filterOut(tweet)){
+
 							
 							List<JSONObject> list = map.get(t);
 							if(list == null){
@@ -105,7 +105,7 @@ public class BufferManager implements Runnable, ReadTweets {
 								map.put(t, list);
 							}
 							list.add(tweet);
-						}
+
 					}			
 					
 				} catch (ParseException e) {

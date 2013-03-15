@@ -15,16 +15,7 @@ public class TokenizeTweet {
 	public static List<String> tokenizeTweet(String tweet){
 		tweet = decode(tweet);
 		tweet = downcase(tweet);
-		List<String> terms = tokenize(tweet);
-		
-		List<String> finalTerms = new LinkedList<String>();
-		for(String term : terms){
-			if(!StopWords.isStopWord(term)){
-				finalTerms.add(term);
-			}		
-		}
-		
-		return finalTerms;
+		return tokenize(tweet);
 	}
 
 	
