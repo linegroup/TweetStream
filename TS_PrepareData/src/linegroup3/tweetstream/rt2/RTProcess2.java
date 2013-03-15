@@ -86,7 +86,7 @@ public class RTProcess2 {
 		InferenceWorker inferWorker = new InferenceWorker(queueInference);
 		new Thread(inferWorker).start();
 
-		/*BufferManager bufManager = new BufferManager();
+		BufferManager bufManager = new BufferManager();
 		bufManager.setQueue(queueTweets);
 		bufManager.setFilter(new FilterTweet(){
 			@Override
@@ -101,11 +101,11 @@ public class RTProcess2 {
 				}
 				return false;
 			}});
-		new Thread(bufManager).start();*/
+		new Thread(bufManager).start();
 		
-		CacheAgent.set(new RedisCache(new FetcherMS()));
+		CacheAgent.set(new RedisCache(bufManager));
 		
-		new Thread(new Runnable(){
+		/*new Thread(new Runnable(){
 
 			@Override
 			public void run() {
@@ -117,9 +117,15 @@ public class RTProcess2 {
 						e.printStackTrace();
 					}
 				}
-			}}).start();
-
-		DETECT_T = dt;
+			}}).start();*/
+		
+		if(dt == null){
+			DETECT_T = new Timestamp(System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000);
+		}else{
+			DETECT_T = dt;
+		}
+		
+		
 		StopWords.initialize();
 
 		Timestamp one_min_after_lastTime = new Timestamp(0);
