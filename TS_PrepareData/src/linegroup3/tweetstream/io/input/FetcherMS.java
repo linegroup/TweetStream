@@ -10,7 +10,9 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,8 +25,15 @@ import aek.hbasepoller.hbase.Tweet;
 public class FetcherMS implements FetchTweets, ReadTweets{ 
 
 	private Timestamp start = Timestamp.valueOf("2013-01-25 00:00:00");
-	private final Timestamp end = Timestamp.valueOf("2013-05-01 00:00:00");
+	private Timestamp end = Timestamp.valueOf("2013-05-01 00:00:00");
 	
+	public FetcherMS(){}
+	
+	public FetcherMS(Timestamp start, Timestamp end){
+		this.start = start;
+		this.end = end;
+	}
+
 	
 	@Override
 	public List<JSONObject> fetch() {
@@ -33,12 +42,20 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 		if(next.after(end)) return ret;
 		Statement stmt = null;
 		ResultSet rs = null;
+		Set<Long> statusIDs = new TreeSet<Long>();
 		try {
 			stmt = conn.createStatement();
 			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + next +"\'" + " order by t";
 			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
 				while (rs.next()) {
+					long statusId = rs.getLong("status_ID");
+					if(!statusIDs.contains(statusId)){
+						statusIDs.add(statusId);
+					}else{
+						continue;
+					}					
+					
 					Timestamp t = rs.getTimestamp("t");
 					String tweet = rs.getString("tweet");
 					if(tweet.startsWith("RT @")) continue;
@@ -98,15 +115,21 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 		List<JSONObject> ret = new LinkedList<JSONObject>();
 		Statement stmt = null;
 		ResultSet rs = null;
+		Set<Long> statusIDs = new TreeSet<Long>();
 		try {
 			stmt = conn.createStatement();
 			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + end +"\'" + " order by t";
 			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
 				while (rs.next()) {
+					long statusId = rs.getLong("status_ID");
+					if(!statusIDs.contains(statusId)){
+						statusIDs.add(statusId);
+					}else{
+						continue;
+					}
 					
 					String content = rs.getString("tweet");					
-					long statusId = rs.getLong("status_ID");
 					long userId = rs.getLong("user_ID");
 					Timestamp t = rs.getTimestamp("t");
 					String geo = rs.getString("geo");
