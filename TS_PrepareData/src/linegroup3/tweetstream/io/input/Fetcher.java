@@ -17,7 +17,7 @@ public class Fetcher implements FetchTweets{
 	
 	private static HBaseTweetFetcher fetcher = null;
 	private static String hTableName = "plr_sg_tweet_live";
-	private static int lagMinute = 0;
+	private static int lagMinute = 5;
 	private static int intervalMinute = 1;
 	
 	private static void reset(){
