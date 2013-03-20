@@ -56,7 +56,7 @@ public class BufferManager implements Runnable, ReadTweets {
 			}
 			
 			try {
-				Thread.sleep(300);
+				Thread.sleep(20000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
