@@ -49,7 +49,11 @@ public class BufferManager implements Runnable, ReadTweets {
 			}}, 0, INTERVAL * 60 * 1000);
 		
 		while(true){
-			write();
+			try{
+				write();
+			} catch(Exception e){
+				e.printStackTrace();
+			}
 			
 			try {
 				Thread.sleep(300);
@@ -173,7 +177,7 @@ public class BufferManager implements Runnable, ReadTweets {
 	
 
 	
-	private int DELAY = 2; // process the tweets DELAY minutes ago in buffer
+	private int DELAY = 6; // process the tweets DELAY minutes ago in buffer
 	
 	private int INTERVAL = 1; // process every INTERVAL minute(s)
 	
