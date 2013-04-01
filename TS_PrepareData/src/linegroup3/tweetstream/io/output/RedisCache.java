@@ -29,6 +29,24 @@ public class RedisCache implements Cache {
 	
 	private TweetMatch tMatcher = new Matcher();
 	private ReadTweets tReader = null;
+	
+	private class AdditionalInfo{
+		private int numTweets = 0;
+		private int numGeoTweets = 0;
+		private int numUsers = 0;
+		private int numGeoUsers = 0;
+		public int getNumTweets(){return numTweets;}
+		public int getNumGeoTweets(){return numGeoTweets;}
+		public int getNumUsers(){return numUsers;}
+		public int getNumGeoUsers(){return numGeoUsers;}
+		public void setNumTweets(int num){numTweets = num;}
+		public void setNumGeoTweets(int num){numGeoTweets = num;}
+		public void setNumUsers(int num){numUsers = num;}
+		public void setNumGeoUsers(int num){numGeoUsers = num;}
+	}
+	
+	
+	
 	public RedisCache(ReadTweets tReader){
 		this.tReader = tReader;
 	}
@@ -48,16 +66,19 @@ public class RedisCache implements Cache {
 		
 		String key = KEY_EVENT_PREFIX + event.getId();
 		jd.set(key, event2json(event).toString());
+		
+		jd.publish(KEY_EVENT_PREFIX, key);
 	}
 
 	@Override
 	public void update(String id, OnlineEvent event) {
 		System.out.println("update:" + "\t" + event.toString());
 		
-		pushTweets(event);
+		AdditionalInfo adInfo = new AdditionalInfo();
+		pushTweets(event, adInfo);
 		
 		String key = KEY_EVENT_PREFIX + event.getId();
-		jd.set(key, event2json(event).toString());
+		jd.set(key, event2json(event, adInfo).toString());
 	}
 	
 	private final int SPAN_THRESHOLD = 3;
@@ -70,6 +91,27 @@ public class RedisCache implements Cache {
 			long span = (event.getEnd().getTime() - event.getStart().getTime()) / (60 * 1000);
 			ret.put("type", span >= SPAN_THRESHOLD ? 1:0);
 			ret.put("keywords", event.getKeywordsStr());
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		return ret;
+	}
+	
+	private JSONObject event2json(OnlineEvent event, AdditionalInfo adInfo){
+		JSONObject ret = new JSONObject();
+		
+		try {
+			ret.put("time", event.getStart().toString());
+			ret.put("lastDetection", event.getEnd().toString());
+			long span = (event.getEnd().getTime() - event.getStart().getTime()) / (60 * 1000);
+			ret.put("type", span >= SPAN_THRESHOLD ? 1:0);
+			ret.put("keywords", event.getKeywordsStr());
+			
+			ret.put("numTweets", adInfo.getNumTweets());
+			ret.put("numUsers", adInfo.getNumUsers());
+			ret.put("numGeoTweets", adInfo.getNumGeoTweets());
+			ret.put("numGeoUsers", adInfo.getNumGeoUsers());
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -116,6 +158,77 @@ public class RedisCache implements Cache {
 				e.printStackTrace();
 			}
 		}
+		
+		putTweetsToRedis(key, tweets);
+	}
+	
+	private void pushTweets(OnlineEvent event, AdditionalInfo adInfo){
+		Timestamp t = event.getEnd();
+		int MINUTES = 15;
+		
+		String key = KEY_EVENT_PREFIX + event.getId() + KEY_EVENT_POSTFIX_REL_TWEETS;
+		
+		List<JSONObject> tweets = getTweetsFormRedis(key);
+		Set<Long> idSet = new TreeSet<Long>();
+		for(JSONObject tweet : tweets){
+			try {
+				long id = TweetExtractor.getId(tweet);
+				idSet.add(id);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		List<String> kwList = event.getKeywords();
+		String[] keywords = new String[kwList.size()];
+		int i = 0;
+		for(String keyword : kwList){
+			keywords[i] = keyword;
+			i ++;
+		}
+		
+		List<JSONObject> newTweets = tReader.read(t, MINUTES);
+		for(JSONObject tweet : newTweets){
+			try {
+				long id = TweetExtractor.getId(tweet);
+				if(!idSet.contains(id)){
+					String content = TweetExtractor.getContent(tweet);
+					if(tMatcher.match(content, keywords)){
+						tweets.add(tweet);
+					}
+				}
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		//////////////////////////////////////////////////////
+		Set<Long> tweetsSet = new TreeSet<Long>();
+		Set<Long> usersSet = new TreeSet<Long>();
+		Set<Long> geoTweetsSet = new TreeSet<Long>();
+		Set<Long> geoUsersSet = new TreeSet<Long>();		
+		for(JSONObject tweet : tweets){
+			try{
+				long id = TweetExtractor.getId(tweet);
+				long userId = TweetExtractor.getUserId(tweet);
+				String geo = TweetExtractor.getGeo(tweet);
+				
+				tweetsSet.add(id);
+				usersSet.add(userId);
+				
+				if(geo != null){
+					geoTweetsSet.add(id);
+					geoUsersSet.add(userId);
+				}
+			} catch(JSONException je){
+				je.printStackTrace();
+			}		
+		}
+		adInfo.setNumTweets(tweetsSet.size());
+		adInfo.setNumUsers(usersSet.size());
+		adInfo.setNumGeoTweets(geoTweetsSet.size());
+		adInfo.setNumGeoUsers(geoUsersSet.size());
+		//////////////////////////////////////////////////////
 		
 		putTweetsToRedis(key, tweets);
 	}
