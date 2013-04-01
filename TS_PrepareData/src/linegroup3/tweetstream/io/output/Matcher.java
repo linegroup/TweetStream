@@ -8,8 +8,8 @@ import linegroup3.tweetstream.postprocess.TokenizeTweet;
 public class Matcher implements TweetMatch{
 
 	@Override
-	public boolean match(String tweet, String[] keywords) { // length of keywords should >= 3
-		if(keywords.length < 3) return false;
+	public boolean match(String tweet, String[] keywords) { 
+		if(keywords.length < 1) return false;
 		
 		String topword = keywords[0];
 		
