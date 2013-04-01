@@ -26,4 +26,18 @@ public class TweetExtractor {
 		return tweet.getLong("statusId");
 	}
 	
+	public static long getUserId(JSONObject tweet) throws JSONException{
+		return tweet.getLong("userId");
+	}
+	
+	public static String getGeo(JSONObject tweet) {
+		try {
+			return tweet.getString("geo");
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 }
