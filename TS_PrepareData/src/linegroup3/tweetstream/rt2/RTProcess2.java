@@ -95,7 +95,10 @@ public class RTProcess2 {
 					String content = TweetExtractor.getContent(tweet);
 					if(content.startsWith("RT @")){
 						return true;
-					}			
+					}
+					if(content.contains("@kingsleyyy")){
+						return true;
+					}
 				} catch (org.json.JSONException e) {
 					e.printStackTrace();
 				}
