@@ -21,7 +21,7 @@ public class RedisCache implements Cache {
 	
 	private Jedis jd = new Jedis(REDIS_HOST, REDIS_PORT);
 	
-	private final String KEY_EVENT_PREFIX = "twitter:sg:event:online:"; // !!!!!! online
+	private final String KEY_EVENT_PREFIX = "twitter:sg:event:online3:"; // !!!!!! online
 	private final String KEY_EVENT_LATEST_ID = KEY_EVENT_PREFIX + "nextId";
 	private final String KEY_EVENT_IDS = KEY_EVENT_PREFIX + "ids";
 	private final String KEY_EVENT_TIMESTAMPS = KEY_EVENT_PREFIX + "timestamps";
@@ -104,8 +104,7 @@ public class RedisCache implements Cache {
 		try {
 			ret.put("time", event.getStart().toString());
 			ret.put("lastDetection", event.getEnd().toString());
-			long span = (event.getEnd().getTime() - event.getStart().getTime()) / (60 * 1000);
-			ret.put("type", span >= SPAN_THRESHOLD ? 1:0);
+			ret.put("type", type(event, adInfo));
 			ret.put("keywords", event.getKeywordsStr());
 			
 			ret.put("numTweets", adInfo.getNumTweets());
@@ -117,6 +116,16 @@ public class RedisCache implements Cache {
 		}
 		
 		return ret;
+	}
+	
+	private int type(OnlineEvent event, AdditionalInfo adInfo){
+		int numTweets = adInfo.getNumTweets();
+		int numUsers= adInfo.getNumUsers();
+		
+		if(numTweets < 200 || numUsers < 5) return 0;
+		
+		long span = (event.getEnd().getTime() - event.getStart().getTime()) / (60 * 1000);
+		return (span >= SPAN_THRESHOLD ? 1:0);
 	}
 	
 	private void pushTweets(OnlineEvent event){
