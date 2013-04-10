@@ -22,7 +22,7 @@ import aek.hbasepoller.hbase.Tweet;
 //fetch tweets from mysql database 
 public class FetcherMS implements FetchTweets, ReadTweets{ 
 
-	private Timestamp start = Timestamp.valueOf("2013-01-25 00:00:00");
+	private Timestamp start = Timestamp.valueOf("2013-04-02 00:00:00");
 	private final Timestamp end = Timestamp.valueOf("2013-05-01 00:00:00");
 	
 	
@@ -33,6 +33,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 		if(next.after(end)) return ret;
 		Statement stmt = null;
 		ResultSet rs = null;
+		FilterTweet filter = new FilterPopUsers();
 		try {
 			stmt = conn.createStatement();
 			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + next +"\'" + " order by t";
@@ -41,7 +42,10 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 				while (rs.next()) {
 					Timestamp t = rs.getTimestamp("t");
 					String tweet = rs.getString("tweet");
-					if(tweet.startsWith("RT @")) continue;
+					if(filter.filterOut(tweet)) {
+						//System.out.println(tweet);
+						continue;
+					}
 					
 					
 					JSONObject obj = new JSONObject();
@@ -98,6 +102,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 		List<JSONObject> ret = new LinkedList<JSONObject>();
 		Statement stmt = null;
 		ResultSet rs = null;
+		FilterTweet filter = new FilterPopUsers();
 		try {
 			stmt = conn.createStatement();
 			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + end +"\'" + " order by t";
@@ -105,7 +110,12 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 				rs = stmt.getResultSet();
 				while (rs.next()) {
 					
-					String content = rs.getString("tweet");					
+					String content = rs.getString("tweet");	
+					
+					if(filter.filterOut(content)) {
+						continue;
+					}
+					
 					long statusId = rs.getLong("status_ID");
 					long userId = rs.getLong("user_ID");
 					Timestamp t = rs.getTimestamp("t");
