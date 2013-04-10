@@ -2,6 +2,7 @@ package linegroup3.tweetstream.io.output;
 
 import java.util.List;
 
+import linegroup3.tweetstream.event.OnlineEvent;
 import linegroup3.tweetstream.postprocess.TokenizeTweet;
 
 
@@ -23,6 +24,25 @@ public class Matcher implements TweetMatch{
 		}
 		if(count >= 2) return true;
 		
+		return false;
+	}
+
+	@Override
+	public boolean match(String tweet, OnlineEvent event) {
+		/*
+		List<String> terms = TokenizeTweet.tokenizeTweet(tweet);
+		
+		if(terms.size() == 0)	return false;
+		
+		double s = 0.0;
+		for(String term : terms){
+			s += event.support(term);
+		}
+			
+		s /= Math.log(1 + terms.size());
+		
+		return s >= 0.015;
+		*/
 		return false;
 	}
 
