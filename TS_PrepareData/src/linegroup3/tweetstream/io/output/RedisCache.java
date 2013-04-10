@@ -135,7 +135,7 @@ public class RedisCache implements Cache {
 			}
 		}
 		
-		if(numTweets > 2500) return 1;
+		if(numTweets > 1500) return 1;
 		
 		if(adInfo.getRTrate() >= 0.95) return 0;
 		
