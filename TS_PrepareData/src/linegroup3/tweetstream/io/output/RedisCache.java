@@ -14,6 +14,8 @@ import redis.clients.jedis.Jedis;
 import linegroup3.tweetstream.event.OnlineEvent;
 import linegroup3.tweetstream.io.input.ReadTweets;
 import linegroup3.tweetstream.io.input.TweetExtractor;
+import linegroup3.tweetstream.postprocess.TokenizeTweet;
+import linegroup3.tweetstream.rt2.StopWords;
 
 public class RedisCache implements Cache {
 	private final String REDIS_HOST = "10.0.106.64";
@@ -21,7 +23,7 @@ public class RedisCache implements Cache {
 	
 	private Jedis jd = new Jedis(REDIS_HOST, REDIS_PORT);
 	
-	private final String KEY_EVENT_PREFIX = "twitter:sg:event:online3:"; // !!!!!! online
+	private final String KEY_EVENT_PREFIX = "twitter:sg:event:temp8:";
 	private final String KEY_EVENT_LATEST_ID = KEY_EVENT_PREFIX + "nextId";
 	private final String KEY_EVENT_IDS = KEY_EVENT_PREFIX + "ids";
 	private final String KEY_EVENT_TIMESTAMPS = KEY_EVENT_PREFIX + "timestamps";
@@ -35,14 +37,17 @@ public class RedisCache implements Cache {
 		private int numGeoTweets = 0;
 		private int numUsers = 0;
 		private int numGeoUsers = 0;
+		private double RTrate = 0.0;
 		public int getNumTweets(){return numTweets;}
 		public int getNumGeoTweets(){return numGeoTweets;}
 		public int getNumUsers(){return numUsers;}
 		public int getNumGeoUsers(){return numGeoUsers;}
+		public double getRTrate(){return RTrate;}
 		public void setNumTweets(int num){numTweets = num;}
 		public void setNumGeoTweets(int num){numGeoTweets = num;}
 		public void setNumUsers(int num){numUsers = num;}
 		public void setNumGeoUsers(int num){numGeoUsers = num;}
+		public void setRTrate(double rt){RTrate = rt;}
 	}
 	
 	
@@ -111,6 +116,7 @@ public class RedisCache implements Cache {
 			ret.put("numUsers", adInfo.getNumUsers());
 			ret.put("numGeoTweets", adInfo.getNumGeoTweets());
 			ret.put("numGeoUsers", adInfo.getNumGeoUsers());
+			ret.put("RTrate", adInfo.getRTrate());
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -121,6 +127,25 @@ public class RedisCache implements Cache {
 	private int type(OnlineEvent event, AdditionalInfo adInfo){
 		int numTweets = adInfo.getNumTweets();
 		int numUsers= adInfo.getNumUsers();
+		
+		List<String> list = event.getKeywords();
+		if(list.size() == 1){
+			if(list.get(0).contentEquals("morning")){
+				return 0;
+			}
+		}
+		
+		if(numTweets > 2500) return 1;
+		
+		if(adInfo.getRTrate() >= 0.95) return 0;
+		
+		if(numTweets >= 500 && numUsers >= 100) return 1;
+			
+		double r = numTweets;
+		if(numUsers >0){
+			r /= numUsers;
+		}
+		if(numUsers >= 100 && r <= 1.5) return 1;
 		
 		if(numTweets < 200 || numUsers < 5) return 0;
 		
@@ -169,6 +194,8 @@ public class RedisCache implements Cache {
 		}
 		
 		putTweetsToRedis(key, tweets);
+		event.beginParseTweets();
+		tweets2event(event, tweets);
 	}
 	
 	private void pushTweets(OnlineEvent event, AdditionalInfo adInfo){
@@ -215,12 +242,18 @@ public class RedisCache implements Cache {
 		Set<Long> tweetsSet = new TreeSet<Long>();
 		Set<Long> usersSet = new TreeSet<Long>();
 		Set<Long> geoTweetsSet = new TreeSet<Long>();
-		Set<Long> geoUsersSet = new TreeSet<Long>();		
+		Set<Long> geoUsersSet = new TreeSet<Long>();
+		double rtCnt = 0.0;
 		for(JSONObject tweet : tweets){
 			try{
 				long id = TweetExtractor.getId(tweet);
 				long userId = TweetExtractor.getUserId(tweet);
 				String geo = TweetExtractor.getGeo(tweet);
+				String content = TweetExtractor.getContent(tweet);
+				
+				if(content.startsWith("RT @")){
+					rtCnt += 1;
+				}
 				
 				tweetsSet.add(id);
 				usersSet.add(userId);
@@ -237,10 +270,42 @@ public class RedisCache implements Cache {
 		adInfo.setNumUsers(usersSet.size());
 		adInfo.setNumGeoTweets(geoTweetsSet.size());
 		adInfo.setNumGeoUsers(geoUsersSet.size());
+		adInfo.setRTrate(rtCnt / tweets.size());
 		//////////////////////////////////////////////////////
 		
 		putTweetsToRedis(key, tweets);
+		event.beginParseTweets();
+		tweets2event(event, tweets);
 	}
+	
+	private void tweets2event(OnlineEvent event, List<JSONObject> tweets){
+		int n = tweets.size();
+		
+		for(JSONObject tweet : tweets){
+			try {
+				String content = TweetExtractor.getContent(tweet);
+				List<String> terms = TokenizeTweet.tokenizeTweet(content);
+
+				List<String> finalTerms = new LinkedList<String>();
+				for (String term : terms) {
+					if (!StopWords.isStopWord(term)) {
+						finalTerms.add(term);
+					}
+				}
+				
+				if(finalTerms.size() == 0) continue;
+				
+				for(String term : finalTerms){
+					event.parseTweets(term, 1.0/(finalTerms.size() * n));
+				}
+				
+				
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	
 	private List<JSONObject> getTweetsFormRedis(String key){
 		List<JSONObject> ret = new LinkedList<JSONObject>();
