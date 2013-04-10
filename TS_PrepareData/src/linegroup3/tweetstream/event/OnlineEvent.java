@@ -28,6 +28,20 @@ public class OnlineEvent {
 	private Map<Timestamp, Burst> bursts = new TreeMap<Timestamp, Burst>();
 	
 	
+	private Map<String, Double> distribution = new TreeMap<String, Double>();
+	
+	public void beginParseTweets(){
+		distribution.clear();
+	}
+	public void parseTweets(String term, double freq){
+		Double p = distribution.get(term);
+		if(p == null){
+			p = new Double(0);
+		}
+		distribution.put(term, p + freq);
+	}
+	
+	
 	public OnlineEvent(Burst burst){
 		id = CacheAgent.get().getId();
 		
@@ -35,6 +49,8 @@ public class OnlineEvent {
 		add(burst);
 		
 		CacheAgent.get().put(id, this);
+		
+		setDistribution();
 	}
 	
 	public String getId(){
@@ -56,18 +72,25 @@ public class OnlineEvent {
 		return end;
 	}
 	
-	public List<String> getKeywords(){
-		Set<String> words = new TreeSet<String>();
+	
+	private void setDistribution(){
+		int n = bursts.size();
 		for(Burst burst : bursts.values()){
-			for(String word : burst.getDistribution().keySet()){
-				words.add(word);
+			for(Map.Entry<String, Double> entry : burst.getDistribution().entrySet()){
+				String term = entry.getKey();
+				Double p = distribution.get(term);
+				if(p == null) p = new Double(0);
+				distribution.put(term, p + entry.getValue() / n);
 			}
 		}
+	}
+	
+	public List<String> getKeywords(){
 		
-		int n = words.size();
+		int n = distribution.size();
 		ValueTermPair[] pairs = new ValueTermPair[n];
 		int i = 0;
-		for(String word : words){
+		for(String word : distribution.keySet()){
 			pairs[i] = new ValueTermPair(support(word), word);
 			i ++;
 		}
@@ -85,10 +108,12 @@ public class OnlineEvent {
 
 		});
 		
-		int TOP_N = 3;
+		int TOP_N = 4;
 		List<String> ret = new LinkedList<String>();
 		for(i = 0; i < n && i < TOP_N; i ++){
-			ret.add(pairs[i].term);
+			if(pairs[i].v >= 0.015){
+				ret.add(pairs[i].term);
+			}
 		}
 		
 		return ret;
@@ -110,6 +135,8 @@ public class OnlineEvent {
 		return ret;
 	}
 	
+	
+	/*
 	public double support(String word){
 		double s = 0.0;
 		for(Burst burst : bursts.values()){
@@ -120,6 +147,12 @@ public class OnlineEvent {
 		}	
 		
 		return s / bursts.size();
+	}*/
+	
+	public double support(String word){
+		Double ret =  distribution.get(word);
+		if(ret == null) return 0.0;
+		return ret;
 	}
 	
 	public List<String> allwords(){ // all the words in order by weight
