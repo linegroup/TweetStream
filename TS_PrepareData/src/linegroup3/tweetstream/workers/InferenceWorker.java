@@ -164,7 +164,7 @@ public class InferenceWorker implements Runnable {
 		return true;
 	}
 	
-	private double ANOMALY_THRESHOLD = 4.0;
+	private double ANOMALY_THRESHOLD = 3.0;
 	
 	private boolean checkAnomaly(double[] vector){
 		double m = mean(vector);
