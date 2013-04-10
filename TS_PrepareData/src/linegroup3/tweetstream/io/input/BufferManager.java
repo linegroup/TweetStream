@@ -24,6 +24,11 @@ public class BufferManager implements Runnable, ReadTweets {
 			@Override
 			public boolean filterOut(JSONObject tweet) {
 				return false;
+			}
+
+			@Override
+			public boolean filterOut(String content) {
+				return false;
 			}});
 	}
 	
@@ -93,12 +98,15 @@ public class BufferManager implements Runnable, ReadTweets {
 		final Timestamp start = new Timestamp(t.getTime() - minutes * 60 * 1000);
 		final Timestamp end = new Timestamp(t.getTime());
 		final TreeMap<Timestamp, List<JSONObject>> map = new TreeMap<Timestamp, List<JSONObject>>();
+		final FilterTweet filter = new FilterPopUsers();
 		
 		buffer.scan(new ProcessObject(){
 
 			@Override
 			public void process(JSONObject tweet) {
 				try {
+					if(filter.filterOut(tweet))	return;					
+					
 					Timestamp t = TweetExtractor.getTime(tweet);
 					if(t.after(start) && !t.after(end)){
 
