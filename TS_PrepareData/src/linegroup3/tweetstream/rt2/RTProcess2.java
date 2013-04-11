@@ -32,6 +32,7 @@ import linegroup3.tweetstream.io.input.BufferManager;
 import linegroup3.tweetstream.io.input.FetchTweets;
 import linegroup3.tweetstream.io.input.Fetcher;
 import linegroup3.tweetstream.io.input.FetcherMS;
+import linegroup3.tweetstream.io.input.FilterPopUsers;
 import linegroup3.tweetstream.io.input.FilterTweet;
 import linegroup3.tweetstream.io.input.TweetExtractor;
 import linegroup3.tweetstream.io.output.CacheAgent;
@@ -88,22 +89,7 @@ public class RTProcess2 {
 
 		BufferManager bufManager = new BufferManager();
 		bufManager.setQueue(queueTweets);
-		bufManager.setFilter(new FilterTweet(){
-			@Override
-			public boolean filterOut(JSONObject tweet) {
-				try {
-					String content = TweetExtractor.getContent(tweet);
-					if(content.startsWith("RT @")){
-						return true;
-					}
-					if(content.contains("@kingsleyyy")){
-						return true;
-					}
-				} catch (org.json.JSONException e) {
-					e.printStackTrace();
-				}
-				return false;
-			}});
+		bufManager.setFilter(new FilterPopUsers());
 		new Thread(bufManager).start();
 		
 		CacheAgent.set(new RedisCache(bufManager));
