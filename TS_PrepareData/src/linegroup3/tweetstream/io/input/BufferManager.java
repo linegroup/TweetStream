@@ -189,7 +189,7 @@ public class BufferManager implements Runnable, ReadTweets {
 	
 	private int INTERVAL = 1; // process every INTERVAL minute(s)
 	
-	private Buffer buffer = new Buffer(30000);
+	private Buffer buffer = new Buffer(50000);
 	
 	private HashSet<Long> ids = new HashSet<Long>();
 	
