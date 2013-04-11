@@ -33,12 +33,12 @@ public class InferenceWorker implements Runnable {
 	
 	@Override
 	public void run() {
-		try{
-			while(true){
+		while (true) {
+			try {
 				infer(queue.take());
+			} catch (InterruptedException ie) {
+				ie.printStackTrace();
 			}
-		}catch(InterruptedException ie){
-			ie.printStackTrace();
 		}
 	}
 	
