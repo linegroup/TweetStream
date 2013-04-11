@@ -54,7 +54,7 @@ public class RTProcess2 {
 		
 	private Timestamp DETECT_T = null;
 	private static final double THRESHOLD_D_V = 1.0;
-	private static final double THRESHOLD_D_A = 10 * 1.0; // is the same as before 1.0
+	private static final double THRESHOLD_D_A = 2 * 1.0; // is the same as before 0.2
 	
 	
 	private static final int THREAD_POOL_SIZE = 2 * H;
@@ -62,7 +62,7 @@ public class RTProcess2 {
 	
 	private int CYCLE = 24*60; // minutes
 	private int INTERVAL = 10; // minutes
-	private int MAX_QUEUE_SIZE = (CYCLE / INTERVAL) + 1; // interval(s)
+	private int MAX_QUEUE_SIZE = (CYCLE / INTERVAL) + 3; // interval(s)
 	private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
 	private int head = 0;
 	private int tail = 0;
