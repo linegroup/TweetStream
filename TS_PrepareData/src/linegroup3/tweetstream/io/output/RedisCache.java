@@ -23,7 +23,8 @@ public class RedisCache implements Cache {
 	
 	private Jedis jd = new Jedis(REDIS_HOST, REDIS_PORT);
 	
-	private final String KEY_EVENT_PREFIX = "twitter:sg:event:temp8:";
+	private final String KEY_EVENT_CHANNEL = "twitter:sg:event:test2";
+	private final String KEY_EVENT_PREFIX = KEY_EVENT_CHANNEL + ":";
 	private final String KEY_EVENT_LATEST_ID = KEY_EVENT_PREFIX + "nextId";
 	private final String KEY_EVENT_IDS = KEY_EVENT_PREFIX + "ids";
 	private final String KEY_EVENT_TIMESTAMPS = KEY_EVENT_PREFIX + "timestamps";
@@ -72,7 +73,7 @@ public class RedisCache implements Cache {
 		String key = KEY_EVENT_PREFIX + event.getId();
 		jd.set(key, event2json(event).toString());
 		
-		jd.publish(KEY_EVENT_PREFIX, key);
+		jd.publish(KEY_EVENT_CHANNEL, event.getId());
 	}
 
 	@Override
@@ -270,7 +271,11 @@ public class RedisCache implements Cache {
 		adInfo.setNumUsers(usersSet.size());
 		adInfo.setNumGeoTweets(geoTweetsSet.size());
 		adInfo.setNumGeoUsers(geoUsersSet.size());
-		adInfo.setRTrate(rtCnt / tweets.size());
+		if(tweets.size() == 0){
+			adInfo.setRTrate(0);
+		}else{
+			adInfo.setRTrate(rtCnt / tweets.size());
+		}
 		//////////////////////////////////////////////////////
 		
 		putTweetsToRedis(key, tweets);
