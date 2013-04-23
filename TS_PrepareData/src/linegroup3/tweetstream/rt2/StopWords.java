@@ -88,7 +88,7 @@ public class StopWords {
 			"you'd", "you'll", "young", "younger", "youngest", "your",
 			"you're", "yours", "yourself", "yourselves", "you've", "z", 
 			"rt", ":d", "omg",  "oh", "lol", "haha", "ok", "okay", "hahaha", 
-			"\u2014", "\u201c", "\u201d", "\u2026"};
+			"\u2014", "\u201c", "\u201d", "\u2026", "photo"};
 
 	static {
 		
