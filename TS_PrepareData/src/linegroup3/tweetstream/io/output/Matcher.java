@@ -1,12 +1,8 @@
 package linegroup3.tweetstream.io.output;
 
-import java.util.LinkedList;
 import java.util.List;
 
-import linegroup3.tweetstream.event.OnlineEvent;
-import linegroup3.tweetstream.freq.FreqMaintainer;
 import linegroup3.tweetstream.postprocess.TokenizeTweet;
-import linegroup3.tweetstream.rt2.StopWords;
 
 
 public class Matcher implements TweetMatch{
