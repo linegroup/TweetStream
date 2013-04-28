@@ -21,9 +21,9 @@ public class RedisCache implements Cache {
 	private final String REDIS_HOST = "10.0.106.64";
 	private final int REDIS_PORT = 6379;
 	
-	private Jedis jd = new Jedis(REDIS_HOST, REDIS_PORT);
+	private Jedis jd = null;
 	
-	private final String KEY_EVENT_CHANNEL = "twitter:sg:event:test2";
+	private final String KEY_EVENT_CHANNEL = "twitter:sg:event:onlinetest2";
 	private final String KEY_EVENT_PREFIX = KEY_EVENT_CHANNEL + ":";
 	private final String KEY_EVENT_LATEST_ID = KEY_EVENT_PREFIX + "nextId";
 	private final String KEY_EVENT_IDS = KEY_EVENT_PREFIX + "ids";
@@ -59,12 +59,20 @@ public class RedisCache implements Cache {
 
 	@Override
 	public String getId() {
+		jd = new Jedis(REDIS_HOST, REDIS_PORT);
+		
 		jd.incr(KEY_EVENT_LATEST_ID);
-		return jd.get(KEY_EVENT_LATEST_ID);
+		String ret = jd.get(KEY_EVENT_LATEST_ID);
+		
+		jd.quit();
+		
+		return ret;
 	}
 
 	@Override
 	public void put(String id, OnlineEvent event) {
+		jd = new Jedis(REDIS_HOST, REDIS_PORT);
+		
 		System.out.println("put:" + "\t" + event.toString());
 		
 		jd.rpush(KEY_EVENT_IDS, id); 
@@ -74,10 +82,14 @@ public class RedisCache implements Cache {
 		jd.set(key, event2json(event).toString());
 		
 		jd.publish(KEY_EVENT_CHANNEL, event.getId());
+		
+		jd.quit();
 	}
 
 	@Override
 	public void update(String id, OnlineEvent event) {
+		jd = new Jedis(REDIS_HOST, REDIS_PORT);
+		
 		System.out.println("update:" + "\t" + event.toString());
 		
 		AdditionalInfo adInfo = new AdditionalInfo();
@@ -85,6 +97,8 @@ public class RedisCache implements Cache {
 		
 		String key = KEY_EVENT_PREFIX + event.getId();
 		jd.set(key, event2json(event, adInfo).toString());
+		
+		jd.quit();
 	}
 	
 	private final int SPAN_THRESHOLD = 3;
@@ -333,18 +347,26 @@ public class RedisCache implements Cache {
 	}
 	
 	public void clear(){
+		jd = new Jedis(REDIS_HOST, REDIS_PORT);
+		
 		System.out.println("\nDeleting the following event-related keys...");
 		for(String k: jd.keys(KEY_EVENT_PREFIX + "*")){
 			System.out.println("Deleting " + k);
 			jd.del(k);
 		}
+		
+		jd.quit();
 	}
 	
 	public void print(){
+		jd = new Jedis(REDIS_HOST, REDIS_PORT);
+		
 		System.out.println("\nPrinting the following event-related keys...");
 		for(String k: jd.keys(KEY_EVENT_PREFIX + "*")){
 			System.out.println(k);
 		}
+		
+		jd.quit();
 	}
 
 }
