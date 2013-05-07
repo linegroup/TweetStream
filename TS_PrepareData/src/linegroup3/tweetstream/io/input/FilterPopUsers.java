@@ -36,6 +36,8 @@ public class FilterPopUsers implements FilterTweet{
 			return true;
 		if(lowCase.contains("@schoolprobiems")) 
 			return true;
+		if(lowCase.contains("@comedypics")) 
+			return true;
 		return false;
 	}
 
