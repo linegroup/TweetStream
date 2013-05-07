@@ -41,8 +41,8 @@ public class RTProcessOffline {
 	static final int N = 200;
 		
 	private Timestamp DETECT_T = null;
-	private static final double THRESHOLD_D_V = 1.0;
-	private static final double THRESHOLD_D_A = 2 * 1.0; // is the same as before 0.2
+	private static final double THRESHOLD_D_V = -100.0;
+	private static final double THRESHOLD_D_A = 0.1 * 1.0; // is the same as before 0.01
 	
 	
 	private static final int THREAD_POOL_SIZE = 2 * H;

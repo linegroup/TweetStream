@@ -86,13 +86,24 @@ public class InferenceWorker implements Runnable {
 		events = ret;
 	}
 	
-	private void infer(InferenceUnit unit){	
+	private void infer(InferenceUnit unit){
+		if(!inferV(unit)){
+			if(!inferV2(unit)){
+				inferA(unit);
+			}
+		}
+	}
+	
+	private boolean inferA(InferenceUnit unit){	
 		Fscore fs0 = new Fscore();
 		Fscore fs1 = new Fscore();
 		
 		
-		loadV(unit);
-		if(!checkAnomaly())	return;
+		loadA(unit);
+		
+		if(Lambda <= 0)	return false;
+		
+		if(!checkAnomaly())	return true;
 		initial();		
 		
 		////////////////////////////////////
@@ -148,7 +159,144 @@ public class InferenceWorker implements Runnable {
 		//System.out.println();
 		//System.out.println("ANALYSING..........................");
 		
+		return true;
+	}
+	
+	private boolean inferV2(InferenceUnit unit){	
+		Fscore fs0 = new Fscore();
+		Fscore fs1 = new Fscore();
 		
+		
+		loadV2(unit);
+		
+		if(Lambda <= 0)	return false;
+		
+		if(!checkAnomaly())	return true;
+		initial();		
+		
+		////////////////////////////////////
+		for(int k = 0; k < K; k ++){
+			w[k] = Lambda / K;
+		}
+		//w[0] = 0.6; w[1] = 0.2; w[2] = 0.1; w[3] = 0.05; w[4] = 0.05;
+		////////////////////////////////////
+	
+		F(fs0);
+				
+		long ct = System.currentTimeMillis();
+		for (int n = 0; n < MAX_SEARCH_STEP; n++) {
+		//for (int n = 0; n < 1000; n++) {
+
+			for (int h = 0; h < H; h++) {
+				pool.execute(new Handler(h));
+			}
+
+			try {
+				taskFinished.acquire(H);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			searchLambda();
+			
+			//F();
+		}
+		ct = (System.currentTimeMillis() - ct);
+		
+		F(fs1); 
+		
+		//if((fs1.F/fs0.F) <= 1)
+
+		//System.out.println(path + "\t" + ct + "\t" + fs0.F1 + "\t" + fs0.F4 + "\t" + fs0.F + "\t" + fs1.F1 + "\t" + fs1.F4 + "\t" + fs1.F +
+		//		"\t" + (fs1.F1/fs0.F1) + "\t" + (fs1.F4/fs0.F4) + "\t" + (fs1.F/fs0.F));
+			
+			Timestamp t = unit.currentTime;
+			String dateStr = t.toString();
+			
+			System.out.println(dateStr + "\t" + ct/1000.0 + "s\t" + (fs1.F/fs0.F));
+		
+			List<Burst> bursts = new LinkedList<Burst>();
+			analyse(Timestamp.valueOf(dateStr), (fs1.F/fs0.F), bursts);
+			
+			
+			BurstCompare.join(events, bursts);
+			flush(t);
+		
+
+		
+		//System.out.println();
+		//System.out.println("ANALYSING..........................");
+		
+		return true;
+	}
+	
+	
+	private boolean inferV(InferenceUnit unit){	
+		Fscore fs0 = new Fscore();
+		Fscore fs1 = new Fscore();
+		
+		
+		loadV(unit);
+		
+		if(Lambda <= 0)	return false;
+		
+		if(!checkAnomaly())	return true;
+		initial();		
+		
+		////////////////////////////////////
+		for(int k = 0; k < K; k ++){
+			w[k] = Lambda / K;
+		}
+		//w[0] = 0.6; w[1] = 0.2; w[2] = 0.1; w[3] = 0.05; w[4] = 0.05;
+		////////////////////////////////////
+	
+		F(fs0);
+				
+		long ct = System.currentTimeMillis();
+		for (int n = 0; n < MAX_SEARCH_STEP; n++) {
+		//for (int n = 0; n < 1000; n++) {
+
+			for (int h = 0; h < H; h++) {
+				pool.execute(new Handler(h));
+			}
+
+			try {
+				taskFinished.acquire(H);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			searchLambda();
+			
+			//F();
+		}
+		ct = (System.currentTimeMillis() - ct);
+		
+		F(fs1); 
+		
+		//if((fs1.F/fs0.F) <= 1)
+
+		//System.out.println(path + "\t" + ct + "\t" + fs0.F1 + "\t" + fs0.F4 + "\t" + fs0.F + "\t" + fs1.F1 + "\t" + fs1.F4 + "\t" + fs1.F +
+		//		"\t" + (fs1.F1/fs0.F1) + "\t" + (fs1.F4/fs0.F4) + "\t" + (fs1.F/fs0.F));
+			
+			Timestamp t = unit.currentTime;
+			String dateStr = t.toString();
+			
+			System.out.println(dateStr + "\t" + ct/1000.0 + "s\t" + (fs1.F/fs0.F));
+		
+			List<Burst> bursts = new LinkedList<Burst>();
+			analyse(Timestamp.valueOf(dateStr), (fs1.F/fs0.F), bursts);
+			
+			
+			BurstCompare.join(events, bursts);
+			flush(t);
+		
+
+		
+		//System.out.println();
+		//System.out.println("ANALYSING..........................");
+		
+		return true;
 	}
 	
 	private boolean checkAnomaly(){
