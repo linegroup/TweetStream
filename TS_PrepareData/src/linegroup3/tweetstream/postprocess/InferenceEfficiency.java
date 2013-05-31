@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.preparedata.HashFamily;
 
 public class InferenceEfficiency {
@@ -34,7 +35,7 @@ public class InferenceEfficiency {
 	private double M = 1e-1;
 	
 
-	private final int N = 200;
+	private final int N = Config.N;
 	private final int K = 5;
 	private final int H = 5;
 	

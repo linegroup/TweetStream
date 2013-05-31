@@ -19,6 +19,7 @@ import java.util.concurrent.Semaphore;
 
 import cmu.arktweetnlp.Twokenize;
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.ActiveTerm;
 import linegroup3.tweetstream.rt2.StopWords;
@@ -28,7 +29,7 @@ import linegroup3.tweetstream.rt2.sket.Sketch;
 public class SketchEfficiencyTest {
 	/////// SET H & K HERE !!!
 	static final int H = 5;
-	static final int N = 200;
+	static final int N = Config.N;
 	
 	static final long oneDayLong = 24 * 60 * 60 * 1000; // (ms)
 	

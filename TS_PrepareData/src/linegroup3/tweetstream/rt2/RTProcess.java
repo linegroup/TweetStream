@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.sket.Estimator;
 import linegroup3.tweetstream.rt2.sket.OutputSketch;
@@ -30,7 +31,7 @@ public class RTProcess {
 	
 	/////// SET H & K HERE !!!
 	static final int H = 5;
-	static final int N = 200;
+	static final int N = Config.N;
 
 	static private Connection conn = null;
 	

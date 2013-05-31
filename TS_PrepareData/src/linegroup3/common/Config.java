@@ -17,4 +17,6 @@ public class Config {
 			e.printStackTrace();
 		}
 	}
+	
+	static public int N = 300;
 }

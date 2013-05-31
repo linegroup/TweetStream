@@ -1,5 +1,7 @@
 package linegroup3.tweetstream.preparedata;
 
+import linegroup3.common.Config;
+
 
 public class HashFamily {
 
@@ -73,7 +75,7 @@ public class HashFamily {
 			System.out.println("" + a[i] + "\t" + b[i]);
 		}
 	}*/
-	private static int N = 200;
+	private static int N = Config.N;
 	
 	public static int hash(int fun, int i) { // return 0~199 fun 0~4
 		//long ret = ((b[fun] + i*a[fun]) % P ) % 200 ;

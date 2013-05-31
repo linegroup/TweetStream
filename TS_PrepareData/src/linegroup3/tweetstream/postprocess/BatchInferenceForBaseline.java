@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.event.Burst;
 import linegroup3.tweetstream.event.BurstCompare;
 import linegroup3.tweetstream.event.DBAgent;
@@ -28,7 +29,7 @@ public class BatchInferenceForBaseline {
 
 	
 
-	private final int N = 200;
+	private final int N = Config.N;
 	private final int H = 5;
 	
 	

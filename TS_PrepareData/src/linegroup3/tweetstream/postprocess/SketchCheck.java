@@ -5,13 +5,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import linegroup3.common.Config;
+
 public class SketchCheck {
 
 	private static double[][][] a = null;  // H*N*N
 	private static double[][] e = null; // H*N
 	private static double Lambda = 0;
 	
-	private static int N = 200;
+	private static int N = Config.N;
 	private static int H = 5;
 	
 	public static void checkBatch(String dirpath) throws Exception{

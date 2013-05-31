@@ -16,6 +16,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.preparedata.HashFamily;
 
 
@@ -31,7 +32,7 @@ public class ParallelInfer {
 	private double M = 1e-1;
 	
 
-	private final int N = 200;
+	private final int N = Config.N;
 	private final int K = 5;
 	private final int H = 5;
 	

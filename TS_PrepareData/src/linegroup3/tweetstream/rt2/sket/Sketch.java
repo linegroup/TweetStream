@@ -2,6 +2,8 @@ package linegroup3.tweetstream.rt2.sket;
 
 import java.sql.Timestamp;
 
+import linegroup3.common.Config;
+
 
 public class Sketch {
 	/////// SET SMOOTH HERE !!!
@@ -11,7 +13,7 @@ public class Sketch {
 	
 	/////// SET H & N HERE !!!
 	static final int H = 5;
-	static final int N = 200;
+	static final int N = Config.N;
 	
 	static private Timestamp t0 = new Timestamp(0);
 

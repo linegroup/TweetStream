@@ -28,6 +28,7 @@ import twitter4j.internal.org.json.JSONException;
 
 import cmu.arktweetnlp.Twokenize;
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.io.input.BufferManager;
 import linegroup3.tweetstream.io.input.FetchTweets;
 import linegroup3.tweetstream.io.input.Fetcher;
@@ -51,7 +52,7 @@ public class RTProcess2 {
 	
 	/////// SET H & N HERE !!!
 	static final int H = 5;
-	static final int N = 200;
+	static final int N = Config.N;
 		
 	private Timestamp DETECT_T = null;
 	private static final double THRESHOLD_D_V = -100.0;
