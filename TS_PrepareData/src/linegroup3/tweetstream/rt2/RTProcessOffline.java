@@ -75,7 +75,7 @@ public class RTProcessOffline {
 		InferenceWorker inferWorker = new InferenceWorker(queueInference);
 		new Thread(inferWorker).start();
 		
-		CacheAgent.set(new RedisCache(new FetcherMS()));
+		//CacheAgent.set(new RedisCache(new FetcherMS()));
 		
 		new Thread(new Runnable(){
 
