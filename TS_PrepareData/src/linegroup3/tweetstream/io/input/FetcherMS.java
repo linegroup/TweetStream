@@ -12,6 +12,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
 
+import linegroup3.common.Config;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -22,8 +24,8 @@ import aek.hbasepoller.hbase.Tweet;
 //fetch tweets from mysql database 
 public class FetcherMS implements FetchTweets, ReadTweets{ 
 
-	private Timestamp start = Timestamp.valueOf("2013-04-02 00:00:00");
-	private final Timestamp end = Timestamp.valueOf("2013-05-01 00:00:00");
+	private Timestamp start = Config.FetcherMS_start;
+	private final Timestamp end = Config.FetcherMS_end;
 	
 	
 	@Override
@@ -36,7 +38,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 		FilterTweet filter = new FilterPopUsers();
 		try {
 			stmt = conn.createStatement();
-			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + next +"\'" + " order by t";
+			String sqlTxt = "select *  from " + Config.FetcherMS_table + " where t >= \'" + start + "\' and t < \'" + next +"\'" + " order by t";
 			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
 				while (rs.next()) {
@@ -105,7 +107,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 		FilterTweet filter = new FilterPopUsers();
 		try {
 			stmt = conn.createStatement();
-			String sqlTxt = "select *  from newstream_for_test where t >= \'" + start + "\' and t < \'" + end +"\'" + " order by t";
+			String sqlTxt = "select *  from " + Config.FetcherMS_table + " where t >= \'" + start + "\' and t < \'" + end +"\'" + " order by t";
 			if (stmt.execute(sqlTxt)) {
 				rs = stmt.getResultSet();
 				while (rs.next()) {
@@ -163,7 +165,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 	static {
 		try {
 			conn = DriverManager
-					.getConnection("jdbc:mysql://10.4.8.16/tweetstream?"
+					.getConnection("jdbc:mysql://10.4.8.16/" + Config.FetcherMS_db + "?"
 							+ "user=root&password=123583");
 
 		} catch (SQLException ex) {
