@@ -42,8 +42,8 @@ public class RTProcessOffline {
 	static final int N = Config.N;
 		
 	private Timestamp DETECT_T = null;
-	private static final double THRESHOLD_D_V = -100.0;
-	private static final double THRESHOLD_D_A = 0.1 * 1.0; // is the same as before 0.01
+	private static final double THRESHOLD_D_V = Config.THRESHOLD_D_V;
+	private static final double THRESHOLD_D_A = Config.THRESHOLD_D_A;
 	
 	
 	private static final int THREAD_POOL_SIZE = 2 * H;
@@ -82,13 +82,16 @@ public class RTProcessOffline {
 			@Override
 			public void run() {
 				FetchTweets fetcher = new FetcherMS();
-				while(true){
+				List<JSONObject> tweets = null;
+				while((tweets = fetcher.fetch()) != null){
 					try {
-						queueTweets.put(fetcher.fetch());
+						queueTweets.put(tweets);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
+				
+				System.out.println("\n\n----------------------\nfinished");
 			}}).start();
 		
 		if(dt == null){

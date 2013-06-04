@@ -31,7 +31,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 	@Override
 	public List<JSONObject> fetch() {
 		Timestamp next = new Timestamp(start.getTime() + 60 * 1000);
-		List<JSONObject> ret = new LinkedList<JSONObject>();
+		List<JSONObject> ret = null;
 		if(next.after(end)) return ret;
 		Statement stmt = null;
 		ResultSet rs = null;
@@ -40,6 +40,7 @@ public class FetcherMS implements FetchTweets, ReadTweets{
 			stmt = conn.createStatement();
 			String sqlTxt = "select *  from " + Config.FetcherMS_table + " where t >= \'" + start + "\' and t < \'" + next +"\'" + " order by t";
 			if (stmt.execute(sqlTxt)) {
+				ret = new LinkedList<JSONObject>();
 				rs = stmt.getResultSet();
 				while (rs.next()) {
 					Timestamp t = rs.getTimestamp("t");

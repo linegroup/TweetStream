@@ -88,10 +88,29 @@ public class InferenceWorker implements Runnable {
 	}
 	
 	private void infer(InferenceUnit unit){
+		/*
 		if(!inferV(unit)){
-			if(!inferV2(unit)){
+			//if(!inferV2(unit)){
+				//inferA(unit);
+			//}
+		}*/
+		
+		if(Config.feature.contentEquals("VA")){
+			if(!inferV(unit)){
 				inferA(unit);
 			}
+		}
+		
+		if(Config.feature.contentEquals("V")){
+			inferV(unit);
+		}
+		
+		if(Config.feature.contentEquals("V2")){
+			inferV2(unit);
+		}
+		
+		if(Config.feature.contentEquals("A")){
+			inferA(unit);
 		}
 	}
 	
@@ -313,7 +332,7 @@ public class InferenceWorker implements Runnable {
 		return true;
 	}
 	
-	private double ANOMALY_THRESHOLD = 3.0;
+	private double ANOMALY_THRESHOLD = Config.ANOMALY_THRESHOLD;
 	
 	private boolean checkAnomaly(double[] vector){
 		double m = mean(vector);

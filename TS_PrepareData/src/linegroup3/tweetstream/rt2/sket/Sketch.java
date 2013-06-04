@@ -7,8 +7,8 @@ import linegroup3.common.Config;
 
 public class Sketch {
 	/////// SET SMOOTH HERE !!!
-	static final long smooth_1 = 15; // minute
-	static final long smooth_2 = 5; // minute
+	static final long smooth_1 = Config.smooth_1; // minute
+	static final long smooth_2 = Config.smooth_2; // minute
 	static final long oneMinute = 60 * 1000; // (ms)
 	
 	/////// SET H & N HERE !!!

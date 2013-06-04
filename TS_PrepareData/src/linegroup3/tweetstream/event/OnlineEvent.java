@@ -14,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import linegroup3.common.Config;
 import linegroup3.tweetstream.io.output.CacheAgent;
 import linegroup3.tweetstream.postprocess.ValueTermPair;
 
@@ -86,6 +87,7 @@ public class OnlineEvent {
 	}
 	
 	public List<String> getKeywords(){
+		if(Config.self_set_distribution)	setDistribution();
 		
 		int n = distribution.size();
 		ValueTermPair[] pairs = new ValueTermPair[n];

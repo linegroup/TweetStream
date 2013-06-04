@@ -13,7 +13,7 @@ public class TopicFilter {
 	}
 	
 	public static boolean filterByW(double w){
-		if(w > 0.225){
+		if(w > 0.250){
 			return false;
 		}
 		return true;
@@ -31,7 +31,7 @@ public class TopicFilter {
 			}
 		}
 		
-		if(s >= 0.05 && max >= 0.04){
+		if(s >= 0.08 && max >= 0.05){
 			return false;
 		}
 		

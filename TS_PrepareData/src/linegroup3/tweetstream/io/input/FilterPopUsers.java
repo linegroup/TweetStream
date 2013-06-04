@@ -1,5 +1,7 @@
 package linegroup3.tweetstream.io.input;
 
+import linegroup3.common.Config;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -20,7 +22,12 @@ public class FilterPopUsers implements FilterTweet{
 
 	@Override
 	public boolean filterOut(String content) {
+		if(!Config.include_RT){
+			if(content.startsWith("RT @"))	return true;
+		}
+		
 		String lowCase = content.toLowerCase();
+		
 		
 		if(lowCase.contains("@kingsleyyy")) 
 			return true;
