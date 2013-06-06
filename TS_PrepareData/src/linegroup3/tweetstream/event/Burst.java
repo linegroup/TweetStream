@@ -44,9 +44,17 @@ public class Burst {
 			s += distribution.get(word) * p;
 		}
 		
-		return s;
+		return s / (norm() * burst.norm());
 	}
 	
+	public double norm(){
+		double ret = 0.0;
+		for(String word : distribution.keySet()){
+			double p = distribution.get(word);
+			ret += p * p;
+		}
+		return Math.sqrt(ret);
+	}
 
 	
 	public String toString(){

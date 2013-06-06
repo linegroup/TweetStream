@@ -157,6 +157,17 @@ public class OnlineEvent {
 		return ret;
 	}
 	
+	public double norm(){
+		double ret = 0.0;
+		
+		for(double p : distribution.values()){
+			ret += p*p;
+		}
+		
+		
+		return Math.sqrt(ret);
+	}
+	
 	public List<String> allwords(){ // all the words in order by weight
 		Set<String> words = new TreeSet<String>();
 		for(Burst burst : bursts.values()){

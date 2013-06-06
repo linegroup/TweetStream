@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 public class BurstCompare {
-	static private final double SIMILARITY_THRESHOLD = 0.01;
-	static private final double JOIN_THRESHOLD = 0.0025;
+	static private final double SIMILARITY_THRESHOLD = 0.8;
+	static private final double JOIN_THRESHOLD = 0.9;
 	static public final double MIN_SUPPORT = 0.025;
 	static public final long T_GAP = 60 * 60 * 1000; // 1 hour
 
@@ -90,7 +90,7 @@ public class BurstCompare {
 			s += p * event.support(word);
 		}
 
-		return  s;
+		return  s / (event.norm() * burst.norm());
 	}
 	
 	static public void join(List<OnlineEvent> events, List<Burst> bursts){

@@ -41,19 +41,19 @@ public class Config {
 	
 	
 	
-	static public String feature = "VA"; //"V", "V2", "A", "VA"
+	static public String feature = "V"; //"V", "V2", "A", "VA"
 	
 	
 	static public boolean self_set_distribution = true;
 	
-	static public boolean include_RT = true;
+	static public boolean include_RT = false;
 	
 	static public double THRESHOLD_D_V = -100.0;
 	
 	static public double THRESHOLD_D_A = -100.0;
 	
 	static public Timestamp historyS = Timestamp.valueOf("2010-06-01 00:00:00");
-	static public Timestamp historyE = Timestamp.valueOf("2010-07-01 00:00:00");
+	static public Timestamp historyE = Timestamp.valueOf("2010-06-07 00:00:00");
 	static public Timestamp historyStart = Timestamp.valueOf("2010-06-03 00:00:00");
 	
 	static public void printinfo(){
