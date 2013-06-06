@@ -24,9 +24,14 @@ import aek.hbasepoller.hbase.Tweet;
 //fetch tweets from mysql database 
 public class FetcherMS implements FetchTweets, ReadTweets{ 
 
-	private Timestamp start = Config.FetcherMS_start;
-	private final Timestamp end = Config.FetcherMS_end;
+	private Timestamp start = null;
+	private Timestamp end = null;
 	
+	
+	public FetcherMS(Timestamp start, Timestamp end){
+		this.start = start;
+		this.end = end;
+	}
 	
 	@Override
 	public List<JSONObject> fetch() {

@@ -430,6 +430,8 @@ public class InferenceWorker implements Runnable {
 	
 	
 	private void analyse(Timestamp t, double optima, List<Burst> bursts){
+		if(TopicFilter.filterByOptimization(optima))	return;
+		
 		final int TopN = 15;
 
 		for (int k = 0; k < K; k++) {

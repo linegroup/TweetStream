@@ -26,15 +26,15 @@ public class Config {
 	static public int N = 300;
 	
 	/////////// FetcherMS
-	static public Timestamp FetcherMS_start = Timestamp.valueOf("2010-06-10 00:00:00");
+	static public Timestamp FetcherMS_start = Timestamp.valueOf("2010-06-05 00:00:00");
 	static public Timestamp FetcherMS_end = Timestamp.valueOf("2010-06-13 00:00:00");
 	static public String FetcherMS_db = "tweetstream";
 	static public String FetcherMS_table = "stream_2010_06";
 	
 	/////////// Detection time
-	static public Timestamp detectionT = Timestamp.valueOf("2010-06-12 14:00:00");
+	static public Timestamp detectionT = Timestamp.valueOf("2010-06-07 00:00:00");
 	
-	static public double ANOMALY_THRESHOLD = 3.0;
+	static public double ANOMALY_THRESHOLD = 4.0;
 	
 	static public long smooth_1 = 15;
 	static public long smooth_2 = 5;
@@ -52,6 +52,10 @@ public class Config {
 	
 	static public double THRESHOLD_D_A = -100.0;
 	
+	static public Timestamp historyS = Timestamp.valueOf("2010-06-01 00:00:00");
+	static public Timestamp historyE = Timestamp.valueOf("2010-07-01 00:00:00");
+	static public Timestamp historyStart = Timestamp.valueOf("2010-06-03 00:00:00");
+	
 	static public void printinfo(){
 		System.out.println("N\t" + N);
 		System.out.println("FetcherMS_start\t" + FetcherMS_start);
@@ -67,5 +71,8 @@ public class Config {
 		System.out.println("include_RT\t" + include_RT);
 		System.out.println("THRESHOLD_D_V\t" + THRESHOLD_D_V);
 		System.out.println("THRESHOLD_D_A\t" + THRESHOLD_D_A);
+		System.out.println("historyS\t" + historyS);
+		System.out.println("historyE\t" + historyE);
+		System.out.println("historyStart\t" + historyStart);
 	}
 }

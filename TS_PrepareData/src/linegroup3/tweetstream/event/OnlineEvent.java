@@ -63,6 +63,7 @@ public class OnlineEvent {
 		
 		bursts.put(burst.getTime(), burst);
 
+		if(Config.self_set_distribution)	setDistribution();
 	}
 	
 	public Timestamp getStart(){
@@ -87,7 +88,6 @@ public class OnlineEvent {
 	}
 	
 	public List<String> getKeywords(){
-		if(Config.self_set_distribution)	setDistribution();
 		
 		int n = distribution.size();
 		ValueTermPair[] pairs = new ValueTermPair[n];

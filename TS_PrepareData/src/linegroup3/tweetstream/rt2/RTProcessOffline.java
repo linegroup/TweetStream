@@ -29,6 +29,7 @@ import linegroup3.tweetstream.io.output.RedisCache;
 import linegroup3.tweetstream.postprocess.TokenizeTweet;
 import linegroup3.tweetstream.preparedata.HashFamily;
 import linegroup3.tweetstream.rt2.sket.Estimator;
+import linegroup3.tweetstream.rt2.sket.History;
 import linegroup3.tweetstream.rt2.sket.Pair;
 import linegroup3.tweetstream.rt2.sket.Sketch;
 import linegroup3.tweetstream.workers.InferenceUnit;
@@ -51,17 +52,17 @@ public class RTProcessOffline {
 	
 	private int CYCLE = 24*60; // minutes
 	private int INTERVAL = 10; // minutes
-	private int MAX_QUEUE_SIZE = (CYCLE / INTERVAL) + 3; // interval(s)
-	private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
-	private int head = 0;
-	private int tail = 0;
+	//private int MAX_QUEUE_SIZE = (CYCLE / INTERVAL) + 3; // interval(s)
+	//private Sketch[] sketchQueue = new Sketch[MAX_QUEUE_SIZE];
+	//private int head = 0;
+	//private int tail = 0;
 	
 	private ActiveTerm2 activeTerms = new ActiveTerm2();
 	
 	public RTProcessOffline(){		
-		for(int i = 0; i < MAX_QUEUE_SIZE; i ++){
-			sketchQueue[i] = new Sketch();
-		}
+		//for(int i = 0; i < MAX_QUEUE_SIZE; i ++){
+		//	sketchQueue[i] = new Sketch();
+		//}
 	}
 	
 	private Sketch currentSketch = null;
@@ -70,7 +71,12 @@ public class RTProcessOffline {
 	private BlockingQueue<InferenceUnit> queueInference = new LinkedBlockingQueue<InferenceUnit>(25);
 	private BlockingQueue<List<JSONObject>> queueTweets = new LinkedBlockingQueue<List<JSONObject>>(25);
 	
+	
+	private History history = new History(INTERVAL);
+	
 	public void runTime(Timestamp dt) {
+		history.process();
+		history.print();
 
 		InferenceWorker inferWorker = new InferenceWorker(queueInference);
 		new Thread(inferWorker).start();
@@ -81,7 +87,7 @@ public class RTProcessOffline {
 
 			@Override
 			public void run() {
-				FetchTweets fetcher = new FetcherMS();
+				FetchTweets fetcher = new FetcherMS(Config.FetcherMS_start, Config.FetcherMS_end);
 				List<JSONObject> tweets = null;
 				while((tweets = fetcher.fetch()) != null){
 					try {
@@ -263,25 +269,10 @@ public class RTProcessOffline {
 
 					// ///// for difference
 					if (t.after(DETECT_T)) {
-						Timestamp oneday_before_t = new Timestamp(t.getTime()
-								- CYCLE * 60 * 1000);
 
-						int index = head;
-						Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
-						while (sketch2.getTime().before(oneday_before_t)) {
-							index++;
-							sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
-						}
-
-						Sketch sketch1 = sketchQueue[(index - 1)
-								% MAX_QUEUE_SIZE];
-
-						Estimator estimator;
 						try {
-							estimator = new Estimator(sketch1, sketch2,
-									oneday_before_t);
-
-							final Pair pair = estimator
+							
+							final Pair pair = history
 									.zeroOrderDiff(currentSketch);
 							// dspeedLogWrite(t, pair.v, pair.a);
 
@@ -299,6 +290,7 @@ public class RTProcessOffline {
 					}
 
 					// ///// cache snapshot
+					/*
 					final long oneMinute = 60 * 1000;
 
 					Timestamp lastone = null;
@@ -322,6 +314,7 @@ public class RTProcessOffline {
 							tail++;
 						}
 					}
+					*/
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -359,26 +352,13 @@ public class RTProcessOffline {
 	}
 	
 	private void putSketch(Sketch sketch) throws Exception{
-		Timestamp t = sketch.getTime();
-		t = new Timestamp(t.getTime() - CYCLE * 60 * 1000);
-
-		int index = head;
-		Sketch sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
-		while (sketch2.getTime().before(t)) {
-			index++;
-			sketch2 = sketchQueue[index % MAX_QUEUE_SIZE];
-		}
-
-		Sketch sketch1 = sketchQueue[(index - 1) % MAX_QUEUE_SIZE];
-
-		Estimator estimator = new Estimator(sketch1, sketch2, t);
 
 		InferenceUnit unit = new InferenceUnit();
 
 		unit.currentTime = sketch.getTime();
-		unit.zeroOrderDiff = estimator.zeroOrderDiff(sketch);
-		unit.firstOrderDiff = estimator.firstOrderDiff(sketch);
-		unit.secondOrderDiff = estimator.secondOrderDiff(sketch);
+		unit.zeroOrderDiff = history.zeroOrderDiff(sketch);
+		unit.firstOrderDiff = history.firstOrderDiff(sketch);
+		unit.secondOrderDiff = history.secondOrderDiff(sketch);
 
 		unit.activeTerms = new LinkedList<String>();
 		for(String term : activeTerms.activeTerms()){
@@ -389,7 +369,7 @@ public class RTProcessOffline {
 	}
 	
 
-	
+	/*
 	private void trackFirstOrder(String dir){
 		BufferedWriter out_V, out_A;
 		for(int h = 0; h < H; h ++)
@@ -418,5 +398,5 @@ public class RTProcessOffline {
 			e.printStackTrace();
 		}
 		
-	}
+	}*/
 }
