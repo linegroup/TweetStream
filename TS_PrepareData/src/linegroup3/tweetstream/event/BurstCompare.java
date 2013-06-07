@@ -5,9 +5,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import linegroup3.common.Config;
+
 public class BurstCompare {
-	static private final double SIMILARITY_THRESHOLD = 0.8;
-	static private final double JOIN_THRESHOLD = 0.9;
+	static private final double SIMILARITY_THRESHOLD = Config.SIMILARITY_THRESHOLD;
+	static private final double JOIN_THRESHOLD = Config.JOIN_THRESHOLD;
 	static public final double MIN_SUPPORT = 0.025;
 	static public final long T_GAP = 60 * 60 * 1000; // 1 hour
 

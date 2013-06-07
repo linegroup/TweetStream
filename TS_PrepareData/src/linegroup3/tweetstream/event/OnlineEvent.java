@@ -63,7 +63,7 @@ public class OnlineEvent {
 		
 		bursts.put(burst.getTime(), burst);
 
-		if(Config.self_set_distribution)	setDistribution();
+		if(Config.self_set_distribution && Config.set_dis_in_add)	setDistribution();
 	}
 	
 	public Timestamp getStart(){
@@ -88,6 +88,7 @@ public class OnlineEvent {
 	}
 	
 	public List<String> getKeywords(){
+		if(Config.self_set_distribution && Config.set_dis_in_getkeywords)	setDistribution();
 		
 		int n = distribution.size();
 		ValueTermPair[] pairs = new ValueTermPair[n];
@@ -158,6 +159,8 @@ public class OnlineEvent {
 	}
 	
 	public double norm(){
+		if(!Config.cos_sim)	return 1.0;
+			
 		double ret = 0.0;
 		
 		for(double p : distribution.values()){

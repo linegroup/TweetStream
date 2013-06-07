@@ -4,6 +4,11 @@ import java.sql.Timestamp;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import linegroup3.common.Config;
+
 
 public class Burst {
 	
@@ -13,6 +18,18 @@ public class Burst {
 	
 	private Map<String, Double> distribution = new TreeMap<String, Double>();
 	
+	public Burst(JSONObject obj){
+		try {
+			time = Timestamp.valueOf(obj.getString("t"));
+			optima = obj.getDouble("op");
+			JSONObject p = obj.getJSONObject("p");
+			for(String word : JSONObject.getNames(p)){
+				distribution.put(word, p.getDouble(word));
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	public Burst(Timestamp time, double optima){
 		this.time = time;
@@ -48,6 +65,8 @@ public class Burst {
 	}
 	
 	public double norm(){
+		if(!Config.cos_sim)	return 1.0;
+		
 		double ret = 0.0;
 		for(String word : distribution.keySet()){
 			double p = distribution.get(word);

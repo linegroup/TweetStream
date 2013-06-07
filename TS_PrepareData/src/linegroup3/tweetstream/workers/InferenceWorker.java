@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 import linegroup3.common.Config;
+import linegroup3.experiment.ExperimentAgent;
 import linegroup3.tweetstream.event.Burst;
 import linegroup3.tweetstream.event.BurstCompare;
 import linegroup3.tweetstream.event.DBAgent;
@@ -489,6 +490,12 @@ public class InferenceWorker implements Runnable {
 			}
 			System.out.println("------------------------------------------");
 			bursts.add(burst);
+		}
+		
+		if(Config.save_bursts){
+			if(bursts.size() > 0){
+				ExperimentAgent.saveInfo(Config.test_id, t, bursts);
+			}
 		}
 	}
 	
