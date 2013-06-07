@@ -102,6 +102,12 @@ public class InferenceWorker implements Runnable {
 			}
 		}
 		
+		if(Config.feature.contentEquals("V2A")){
+			if(!inferV2(unit)){
+				inferA(unit);
+			}
+		}
+		
 		if(Config.feature.contentEquals("V")){
 			inferV(unit);
 		}
