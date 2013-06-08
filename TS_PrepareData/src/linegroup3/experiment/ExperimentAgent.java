@@ -24,12 +24,14 @@ public class ExperimentAgent {
 	
 	static private Random rand = new Random();
 
+	/*
 	static public long getId(){
 		return Math.abs(rand.nextLong());
 	}
+	*/
 	
 	static public void createTable(long testId){
-		String sqlStr = "create table test_" + testId + " ( t Timestamp, bursts text, primary key(t)) engine myisam";
+		String sqlStr = "create table if not exists test_" + testId + " ( t Timestamp, bursts text, primary key(t)) engine myisam";
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(sqlStr);
@@ -86,6 +88,8 @@ public class ExperimentAgent {
 		
 		String sqlStr = "insert into test_" + testId +  " (t, bursts) values(?, ?)";
 		PreparedStatement stmt = null;
+		while(true){
+		boolean breakOut = true;
 		try {
 			stmt = conn.prepareStatement(sqlStr);
 
@@ -94,11 +98,16 @@ public class ExperimentAgent {
 			stmt.setString(2, text);
 			
 			stmt.execute();
+			
 		} catch (SQLException ex) {
 			// handle any errors
 			System.out.println("SQLException: " + ex.getMessage());
 			System.out.println("SQLState: " + ex.getSQLState());
 			System.out.println("VendorError: " + ex.getErrorCode());
+			
+			reconnect();
+			
+			breakOut = false;
 		} finally {
 			// it is a good idea to release
 			// resources in a finally{} block
@@ -111,6 +120,9 @@ public class ExperimentAgent {
 				} // ignore
 				stmt = null;
 			}
+		}
+		
+		if(breakOut)	break;
 		}
 	}
 
@@ -219,6 +231,36 @@ public class ExperimentAgent {
 	static private Connection conn = null;
 	
 	static {
+		try {
+			conn = DriverManager
+					.getConnection("jdbc:mysql://10.4.8.16/" + "experiment" + "?"
+							+ "user=root&password=123583");
+
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+			conn = null;
+
+		}
+	}
+	
+	
+	static private void reconnect(){
+		try {
+			conn.close();
+		} catch (SQLException ex) {
+			// handle any errors
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
+
+			conn = null;
+
+		}
+		
 		try {
 			conn = DriverManager
 					.getConnection("jdbc:mysql://10.4.8.16/" + "experiment" + "?"

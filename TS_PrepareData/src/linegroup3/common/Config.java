@@ -38,12 +38,12 @@ public class Config {
 	
 	static public double ANOMALY_THRESHOLD = 4.0;
 	
-	static public long smooth_1 = 15;
-	static public long smooth_2 = 5;
+	static public long smooth_1 = 30;
+	static public long smooth_2 = 10;
 	
 	
 	
-	static public String feature = "V"; //"V", "V2", "A", "VA"
+	static public String feature = "V2A"; //"V", "V2", "A", "VA"
 	
 	
 	static public boolean self_set_distribution = true;
@@ -75,7 +75,7 @@ public class Config {
 	
 	static public boolean save_bursts = true;
 	
-	static public long test_id = 1;
+	static public long test_id = 18;
 	
 	static public void printinfo(){
 		System.out.println(parameters());
